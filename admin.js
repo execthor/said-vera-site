@@ -290,29 +290,42 @@ $("galleryNextBtn")?.addEventListener("click", () => {
 });
 let adminHoverTimer = null;
 
-document.addEventListener("mouseover", (e) => {
-  const img = e.target.closest(".admin-gallery-img");
-  if (!img) return;
+let videoHoverTimer = null;
 
-  clearTimeout(adminHoverTimer);
+document.addEventListener("mouseenter", (e) => {
 
-  adminHoverTimer = setTimeout(() => {
-    let preview = document.getElementById("adminPhotoPreview");
+  const card = e.target.closest(".admin-video-card");
 
-    if (!preview) {
-      preview = document.createElement("div");
-      preview.id = "adminPhotoPreview";
-      preview.innerHTML = `
-        <div class="admin-photo-preview-box">
-          <img id="adminPhotoPreviewImg" src="">
-        </div>
-      `;
-      document.body.appendChild(preview);
-    }
+  if (!card) return;
 
-    document.getElementById("adminPhotoPreviewImg").src = img.src;
-    preview.classList.add("active");
+  clearTimeout(videoHoverTimer);
+
+  videoHoverTimer = setTimeout(() => {
+
+    openAdminVideoModal(card.dataset.url);
+
   }, 1000);
+
+}, true);
+
+document.addEventListener("mouseleave", (e) => {
+
+  const card = e.target.closest(".admin-video-card");
+
+  if (!card) return;
+
+  clearTimeout(videoHoverTimer);
+
+}, true);
+
+document.addEventListener("click", (e) => {
+
+  const card = e.target.closest(".admin-video-card");
+
+  if (!card) return;
+
+  openAdminVideoModal(card.dataset.url);
+
 });
 
 document.addEventListener("mouseout", (e) => {
