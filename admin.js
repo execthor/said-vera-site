@@ -1,15 +1,5 @@
-import {
-  collection,
-  addDoc,
-  doc,
-  setDoc,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-
-
-
-import { auth, db } from "./firebase.js";;
+```js
+import { auth, db } from "./firebase.js";
 
 import {
   signInWithEmailAndPassword,
@@ -45,12 +35,15 @@ onAuthStateChanged(auth, (user) => {
 });
 
 document.getElementById("uploadHeroVideoBtn").addEventListener("click", async () => {
+
   const file = document.getElementById("heroVideoFile").files[0];
 
   if (!file) {
     alert("Video seç");
     return;
   }
+
+  alert("Video yükleniyor...");
 
   const formData = new FormData();
   formData.append("file", file);
@@ -66,14 +59,21 @@ document.getElementById("uploadHeroVideoBtn").addEventListener("click", async ()
 
   const data = await response.json();
 
+  if (!data.secure_url) {
+    console.log(data);
+    alert("Video yüklenemedi");
+    return;
+  }
+
   await setDoc(doc(db, "siteSettings", "main"), {
     heroVideo: data.secure_url
   }, { merge: true });
 
-  alert("Video yüklendi ve ana video değiştirildi");
+  alert("Video başarıyla yüklendi");
 });
 
 document.getElementById("saveStoryBtn").addEventListener("click", async () => {
+
   const storyTitle = document.getElementById("storyTitleInput").value;
   const storyText = document.getElementById("storyTextInput").value;
 
@@ -86,6 +86,7 @@ document.getElementById("saveStoryBtn").addEventListener("click", async () => {
 });
 
 document.getElementById("uploadPhotoBtn").addEventListener("click", async () => {
+
   const file = document.getElementById("photoFile").files[0];
   const title = document.getElementById("photoTitle").value;
 
@@ -95,6 +96,7 @@ document.getElementById("uploadPhotoBtn").addEventListener("click", async () => 
   }
 
   const formData = new FormData();
+
   formData.append("file", file);
   formData.append("upload_preset", "saidvera");
 
@@ -118,6 +120,7 @@ document.getElementById("uploadPhotoBtn").addEventListener("click", async () => 
 });
 
 document.getElementById("addDateBtn").addEventListener("click", async () => {
+
   const title = document.getElementById("dateTitle").value;
   const date = document.getElementById("dateValue").value;
   const text = document.getElementById("dateText").value;
@@ -133,6 +136,7 @@ document.getElementById("addDateBtn").addEventListener("click", async () => {
 });
 
 document.getElementById("addPlanBtn").addEventListener("click", async () => {
+
   const title = document.getElementById("planTitle").value;
   const text = document.getElementById("planText").value;
 
@@ -147,6 +151,7 @@ document.getElementById("addPlanBtn").addEventListener("click", async () => {
 });
 
 document.getElementById("addMusicBtn").addEventListener("click", async () => {
+
   const title = document.getElementById("musicTitle").value;
   const artist = document.getElementById("musicArtist").value;
   const url = document.getElementById("musicUrl").value;
@@ -162,6 +167,7 @@ document.getElementById("addMusicBtn").addEventListener("click", async () => {
 });
 
 document.getElementById("saveSecretBtn").addEventListener("click", async () => {
+
   const secretMessage = document.getElementById("secretMessageInput").value;
 
   await setDoc(doc(db, "siteSettings", "main"), {
@@ -174,43 +180,4 @@ document.getElementById("saveSecretBtn").addEventListener("click", async () => {
 document.getElementById("logoutBtn").addEventListener("click", async () => {
   await signOut(auth);
 });
-document.getElementById("uploadHeroVideoBtn").addEventListener("click", async () => {
-  console.log("Video yükle butonuna basıldı");
-
-  const fileInput = document.getElementById("heroVideoFile");
-  const file = fileInput.files[0];
-
-  if (!file) {
-    alert("Lütfen video seç");
-    return;
-  }
-
-  alert("Video yükleniyor, lütfen bekle...");
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", "saidvera");
-
-  const response = await fetch(
-    "https://api.cloudinary.com/v1_1/dosgbutzh/video/upload",
-    {
-      method: "POST",
-      body: formData
-    }
-  );
-
-  const data = await response.json();
-
-  console.log("Cloudinary cevabı:", data);
-
-  if (!data.secure_url) {
-    alert("Video yüklenemedi. Console ekranına bak.");
-    return;
-  }
-
-  await setDoc(doc(db, "siteSettings", "main"), {
-    heroVideo: data.secure_url
-  }, { merge: true });
-
-  alert("Video başarıyla yüklendi ve kaydedildi");
-});
+```
