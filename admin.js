@@ -33,6 +33,7 @@ let heroVideoPageCurrent = 1;
 const loginBox = $("loginBox");
 const adminBox = $("adminBox");
 
+/* LOGIN */
 $("loginBtn")?.addEventListener("click", async () => {
   try {
     await signInWithEmailAndPassword(
@@ -49,13 +50,14 @@ onAuthStateChanged(auth, (user) => {
   if (loginBox) loginBox.style.display = user ? "none" : "block";
   if (adminBox) adminBox.style.display = user ? "block" : "none";
 
- if (user) {
-  loadAdminGallery();
-  loadAdminStories();
-  loadAdminHeroVideos();
-}
+  if (user) {
+    loadAdminGallery();
+    loadAdminStories();
+    loadAdminHeroVideos();
+  }
 });
 
+/* SAYFA GEÇİŞ */
 document.querySelectorAll("[data-page]").forEach((btn) => {
   btn.addEventListener("click", () => {
     const target = btn.dataset.page;
@@ -65,9 +67,16 @@ document.querySelectorAll("[data-page]").forEach((btn) => {
     });
 
     document.getElementById(target)?.classList.remove("hidden");
+
+    document.querySelectorAll(".menu-btn").forEach((b) => {
+      b.classList.remove("active-menu");
+    });
+
+    btn.classList.add("active-menu");
   });
 });
 
+/* VİDEO YÜKLE */
 $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
   const file = $("heroVideoFile")?.files[0];
 
@@ -91,16 +100,16 @@ $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
     return alert("Video yüklenemedi");
   }
 
-await addDoc(collection(db, "heroVideos"), {
-  videoUrl: data.secure_url,
-  createdAt: serverTimestamp()
+  await addDoc(collection(db, "heroVideos"), {
+    videoUrl: data.secure_url,
+    createdAt: serverTimestamp()
+  });
+
+  alert("Video arşive eklendi");
+  loadAdminHeroVideos();
 });
 
-alert("Video arşive eklendi");
-
-loadAdminHeroVideos();
-});
-
+/* HİKAYE EKLE */
 $("saveStoryBtn")?.addEventListener("click", async () => {
   await addDoc(collection(db, "stories"), {
     storyTitle: $("storyTitleInput")?.value || "",
@@ -112,6 +121,7 @@ $("saveStoryBtn")?.addEventListener("click", async () => {
   loadAdminStories();
 });
 
+/* FOTOĞRAF YÜKLE */
 $("uploadPhotoBtn")?.addEventListener("click", async () => {
   const file = $("photoFile")?.files[0];
   const title = $("photoTitle")?.value || "";
@@ -143,10 +153,10 @@ $("uploadPhotoBtn")?.addEventListener("click", async () => {
   });
 
   alert("Fotoğraf yüklendi");
-
   loadAdminGallery();
 });
 
+/* TARİH EKLE */
 $("addDateBtn")?.addEventListener("click", async () => {
   await addDoc(collection(db, "dates"), {
     title: $("dateTitle")?.value || "",
@@ -158,6 +168,7 @@ $("addDateBtn")?.addEventListener("click", async () => {
   alert("Tarih eklendi");
 });
 
+/* PLAN EKLE */
 $("addPlanBtn")?.addEventListener("click", async () => {
   await addDoc(collection(db, "plans"), {
     title: $("planTitle")?.value || "",
@@ -169,6 +180,7 @@ $("addPlanBtn")?.addEventListener("click", async () => {
   alert("Plan eklendi");
 });
 
+/* MÜZİK EKLE */
 $("addMusicBtn")?.addEventListener("click", async () => {
   await addDoc(collection(db, "musicList"), {
     title: $("musicTitle")?.value || "",
@@ -180,6 +192,7 @@ $("addMusicBtn")?.addEventListener("click", async () => {
   alert("Müzik eklendi");
 });
 
+/* GİZLİ MESAJ */
 $("saveSecretBtn")?.addEventListener("click", async () => {
   await setDoc(
     doc(db, "siteSettings", "main"),
@@ -190,10 +203,12 @@ $("saveSecretBtn")?.addEventListener("click", async () => {
   alert("Gizli mesaj kaydedildi");
 });
 
+/* ÇIKIŞ */
 $("logoutBtn")?.addEventListener("click", async () => {
   await signOut(auth);
 });
 
+/* GALERİ LİSTE */
 async function loadAdminGallery() {
   const list = $("galleryAdminList");
   if (!list) return;
@@ -251,10 +266,7 @@ function renderGalleryPage() {
   });
 
   const totalPages = Math.ceil(galleryItems.length / pageSize) || 1;
-
-  if (info) {
-    info.textContent = `${galleryPageCurrent} / ${totalPages}`;
-  }
+  if (info) info.textContent = `${galleryPageCurrent} / ${totalPages}`;
 
   document.querySelectorAll(".deleteGalleryBtn").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -265,12 +277,9 @@ function renderGalleryPage() {
       await deleteDoc(doc(db, "gallery", id));
 
       alert("Fotoğraf silindi");
-
       loadAdminGallery();
     });
   });
-
-
 }
 
 $("galleryPrevBtn")?.addEventListener("click", () => {
@@ -288,44 +297,33 @@ $("galleryNextBtn")?.addEventListener("click", () => {
     renderGalleryPage();
   }
 });
+
+/* FOTOĞRAF HOVER */
 let adminHoverTimer = null;
 
-let videoHoverTimer = null;
+document.addEventListener("mouseover", (e) => {
+  const img = e.target.closest(".admin-gallery-img");
+  if (!img) return;
 
-document.addEventListener("mouseenter", (e) => {
+  clearTimeout(adminHoverTimer);
 
-  const card = e.target.closest(".admin-video-card");
+  adminHoverTimer = setTimeout(() => {
+    let preview = document.getElementById("adminPhotoPreview");
 
-  if (!card) return;
+    if (!preview) {
+      preview = document.createElement("div");
+      preview.id = "adminPhotoPreview";
+      preview.innerHTML = `
+        <div class="admin-photo-preview-box">
+          <img id="adminPhotoPreviewImg" src="">
+        </div>
+      `;
+      document.body.appendChild(preview);
+    }
 
-  clearTimeout(videoHoverTimer);
-
-  videoHoverTimer = setTimeout(() => {
-
-    openAdminVideoModal(card.dataset.url);
-
+    document.getElementById("adminPhotoPreviewImg").src = img.src;
+    preview.classList.add("active");
   }, 1000);
-
-}, true);
-
-document.addEventListener("mouseleave", (e) => {
-
-  const card = e.target.closest(".admin-video-card");
-
-  if (!card) return;
-
-  clearTimeout(videoHoverTimer);
-
-}, true);
-
-document.addEventListener("click", (e) => {
-
-  const card = e.target.closest(".admin-video-card");
-
-  if (!card) return;
-
-  openAdminVideoModal(card.dataset.url);
-
 });
 
 document.addEventListener("mouseout", (e) => {
@@ -341,8 +339,7 @@ document.addEventListener("mouseout", (e) => {
   if (previewImg) previewImg.src = "";
 });
 
-
-
+/* HİKAYE LİSTE */
 async function loadAdminStories() {
   const list = $("storyAdminList");
   if (!list) return;
@@ -396,15 +393,11 @@ function renderStoryPage() {
   });
 
   const totalPages = Math.ceil(storyItems.length / pageSize) || 1;
-
-  if (info) {
-    info.textContent = `${storyPageCurrent} / ${totalPages}`;
-  }
+  if (info) info.textContent = `${storyPageCurrent} / ${totalPages}`;
 
   document.querySelectorAll(".selectStoryBtn").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const selected = storyItems.find((x) => x.id === btn.dataset.id);
-
       if (!selected) return;
 
       await setDoc(
@@ -436,23 +429,18 @@ $("storyNextBtn")?.addEventListener("click", () => {
     renderStoryPage();
   }
 });
+
+/* VİDEO LİSTE */
 async function loadAdminHeroVideos() {
-
   const list = $("heroVideoAdminList");
-
   if (!list) return;
 
-  const q = query(
-    collection(db, "heroVideos"),
-    orderBy("createdAt", "desc")
-  );
-
+  const q = query(collection(db, "heroVideos"), orderBy("createdAt", "desc"));
   const snapshot = await getDocs(q);
 
   heroVideoItems = [];
 
   snapshot.forEach((docSnap) => {
-
     heroVideoItems.push({
       id: docSnap.id,
       ...docSnap.data()
@@ -463,37 +451,29 @@ async function loadAdminHeroVideos() {
 }
 
 function renderHeroVideoPage() {
-
   const list = $("heroVideoAdminList");
   const info = $("heroVideoPageInfo");
 
   if (!list) return;
 
-  const start =
-    (heroVideoPageCurrent - 1) * pageSize;
-
-  const end =
-    start + pageSize;
-
-  const pageItems =
-    heroVideoItems.slice(start, end);
+  const start = (heroVideoPageCurrent - 1) * pageSize;
+  const end = start + pageSize;
+  const pageItems = heroVideoItems.slice(start, end);
 
   list.innerHTML = "";
 
   pageItems.forEach((item) => {
-
     list.innerHTML += `
       <div 
-  class="admin-video-card bg-white/70 rounded-3xl overflow-hidden shadow-lg border border-rose-100 p-3"
-  data-url="${item.videoUrl}"
->
-
-    <video
-  src="${item.videoUrl}"
-  class="admin-video-preview w-full h-40 object-cover rounded-2xl mb-3 cursor-pointer"
-  muted
-  data-url="${item.videoUrl}"
-></video>
+        class="admin-video-card bg-white/70 rounded-3xl overflow-hidden shadow-lg border border-rose-100 p-3"
+        data-url="${item.videoUrl}"
+      >
+        <video
+          src="${item.videoUrl}"
+          class="admin-video-preview w-full h-40 object-cover rounded-2xl mb-3 cursor-pointer"
+          muted
+          playsinline
+        ></video>
 
         <button
           class="selectHeroVideoBtn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold w-full mb-2"
@@ -508,28 +488,18 @@ function renderHeroVideoPage() {
         >
           Sil
         </button>
-
       </div>
     `;
   });
 
-  const totalPages =
-    Math.ceil(heroVideoItems.length / pageSize) || 1;
-
-  if (info) {
-    info.textContent =
-      `${heroVideoPageCurrent} / ${totalPages}`;
-  }
+  const totalPages = Math.ceil(heroVideoItems.length / pageSize) || 1;
+  if (info) info.textContent = `${heroVideoPageCurrent} / ${totalPages}`;
 
   document.querySelectorAll(".selectHeroVideoBtn").forEach((btn) => {
-
     btn.addEventListener("click", async () => {
-
       await setDoc(
         doc(db, "siteSettings", "main"),
-        {
-          heroVideo: btn.dataset.url
-        },
+        { heroVideo: btn.dataset.url },
         { merge: true }
       );
 
@@ -538,45 +508,73 @@ function renderHeroVideoPage() {
   });
 
   document.querySelectorAll(".deleteHeroVideoBtn").forEach((btn) => {
-
     btn.addEventListener("click", async () => {
-
       if (!confirm("Video silinsin mi?")) return;
 
-      await deleteDoc(
-        doc(db, "heroVideos", btn.dataset.id)
-      );
+      await deleteDoc(doc(db, "heroVideos", btn.dataset.id));
 
       alert("Video silindi");
-
       loadAdminHeroVideos();
     });
   });
 }
 
 $("heroVideoPrevBtn")?.addEventListener("click", () => {
-
   if (heroVideoPageCurrent > 1) {
-
     heroVideoPageCurrent--;
-
     renderHeroVideoPage();
   }
 });
 
 $("heroVideoNextBtn")?.addEventListener("click", () => {
-
-  const totalPages =
-    Math.ceil(heroVideoItems.length / pageSize) || 1;
+  const totalPages = Math.ceil(heroVideoItems.length / pageSize) || 1;
 
   if (heroVideoPageCurrent < totalPages) {
-
     heroVideoPageCurrent++;
-
     renderHeroVideoPage();
   }
 });
 
+/* VİDEO HOVER VE MODAL */
+let videoHoverTimer = null;
+
+document.addEventListener("mouseenter", (e) => {
+  const card = e.target.closest(".admin-video-card");
+  if (!card) return;
+
+  clearTimeout(videoHoverTimer);
+
+  videoHoverTimer = setTimeout(() => {
+    const video = card.querySelector("video");
+    if (!video) return;
+
+    video.currentTime = 0;
+    video.muted = true;
+    video.play().catch(() => {});
+  }, 500);
+}, true);
+
+document.addEventListener("mouseleave", (e) => {
+  const card = e.target.closest(".admin-video-card");
+  if (!card) return;
+
+  clearTimeout(videoHoverTimer);
+
+  const video = card.querySelector("video");
+  if (!video) return;
+
+  video.pause();
+  video.currentTime = 0;
+}, true);
+
+document.addEventListener("click", (e) => {
+  if (e.target.closest("button")) return;
+
+  const card = e.target.closest(".admin-video-card");
+  if (!card) return;
+
+  openAdminVideoModal(card.dataset.url);
+});
 
 function openAdminVideoModal(url) {
   let modal = document.getElementById("adminVideoModal");
@@ -592,7 +590,9 @@ function openAdminVideoModal(url) {
     `;
     document.body.appendChild(modal);
 
-    document.getElementById("adminVideoModalClose").addEventListener("click", closeAdminVideoModal);
+    document
+      .getElementById("adminVideoModalClose")
+      .addEventListener("click", closeAdminVideoModal);
 
     modal.addEventListener("click", (e) => {
       if (e.target === modal) closeAdminVideoModal();
