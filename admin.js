@@ -163,3 +163,43 @@ document.getElementById("saveSecretBtn").addEventListener("click", async () => {
 document.getElementById("logoutBtn").addEventListener("click", async () => {
   await signOut(auth);
 });
+document.getElementById("uploadHeroVideoBtn").addEventListener("click", async () => {
+  console.log("Video yükle butonuna basıldı");
+
+  const fileInput = document.getElementById("heroVideoFile");
+  const file = fileInput.files[0];
+
+  if (!file) {
+    alert("Lütfen video seç");
+    return;
+  }
+
+  alert("Video yükleniyor, lütfen bekle...");
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "saidvera");
+
+  const response = await fetch(
+    "https://api.cloudinary.com/v1_1/dosgbutzh/video/upload",
+    {
+      method: "POST",
+      body: formData
+    }
+  );
+
+  const data = await response.json();
+
+  console.log("Cloudinary cevabı:", data);
+
+  if (!data.secure_url) {
+    alert("Video yüklenemedi. Console ekranına bak.");
+    return;
+  }
+
+  await setDoc(doc(db, "siteSettings", "main"), {
+    heroVideo: data.secure_url
+  }, { merge: true });
+
+  alert("Video başarıyla yüklendi ve kaydedildi");
+});
