@@ -18,7 +18,31 @@ async function loadSettings() {
   const data = snap.data();
 
 
-if (data.heroVideo) { const source = document.getElementById("heroVideoSource"); const blurSource = document.getElementById("heroVideoBlurSource"); const video = document.getElementById("heroVideo"); if (source && blurSource && video) { source.src = data.heroVideo; blurSource.src = data.heroVideo; video.load(); video.muted = true; video.play().catch(() => {}); } }
+
+if (data.heroVideo) {
+
+  const source = document.getElementById("heroVideoSource");
+  const blurSource = document.getElementById("heroVideoBlurSource");
+
+  const video = document.getElementById("heroVideo");
+  const blurVideo = document.getElementById("heroVideoBlur");
+
+  if (source && blurSource && video && blurVideo) {
+
+    source.src = data.heroVideo;
+    blurSource.src = data.heroVideo;
+
+    video.load();
+    blurVideo.load();
+
+    video.muted = true;
+    blurVideo.muted = true;
+
+    video.play().catch(() => {});
+    blurVideo.play().catch(() => {});
+  }
+}
+
 
 
   if (document.getElementById("storyTitle")) {
