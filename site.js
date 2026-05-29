@@ -17,16 +17,27 @@ async function loadSettings() {
 
   const data = snap.data();
 
-  if (data.heroVideo) {
-    const source = document.getElementById("heroVideoSource");
-    const video = document.getElementById("heroVideo");
 
-    if (source && video) {
-      source.src = data.heroVideo;
-      video.load();
-      video.play();
-    }
+if (data.heroVideo) {
+
+  const source = document.getElementById("heroVideoSource");
+  const video = document.getElementById("heroVideo");
+
+  if (source && video) {
+
+    // Cache kır
+    source.src = data.heroVideo + "?t=" + Date.now();
+
+    video.load();
+
+    video.muted = true;
+
+    video.play().catch((err) => {
+      console.log("Video autoplay engellendi:", err);
+    });
   }
+}
+
 
   if (document.getElementById("storyTitle")) {
     document.getElementById("storyTitle").textContent = data.storyTitle || "Hikayemiz";
