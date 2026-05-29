@@ -20,25 +20,22 @@ async function loadSettings() {
 
 
 if (data.heroVideo) {
-
-  const source = document.getElementById("heroVideoSource");
+  const mainSource = document.getElementById("heroVideoSource");
   const blurSource = document.getElementById("heroVideoBlurSource");
 
-  const video = document.getElementById("heroVideo");
+  const mainVideo = document.getElementById("heroVideo");
   const blurVideo = document.getElementById("heroVideoBlur");
 
-  if (source && blurSource && video && blurVideo) {
+  if (mainSource && blurSource && mainVideo && blurVideo) {
+    const videoUrl = data.heroVideo + "?t=" + Date.now();
 
-    source.src = data.heroVideo;
-    blurSource.src = data.heroVideo;
+    mainSource.src = videoUrl;
+    blurSource.src = videoUrl;
 
-    video.load();
+    mainVideo.load();
     blurVideo.load();
 
-    video.muted = true;
     blurVideo.muted = true;
-
-    video.play().catch(() => {});
     blurVideo.play().catch(() => {});
   }
 }
