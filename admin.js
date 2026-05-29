@@ -93,7 +93,7 @@ $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
   alert("Video başarıyla yüklendi");
 });
 
-$$("saveStoryBtn")?.addEventListener("click", async () => {
+$("saveStoryBtn")?.addEventListener("click", async () => {
   await addDoc(collection(db, "stories"), {
     storyTitle: $("storyTitleInput")?.value || "",
     storyText: $("storyTextInput")?.value || "",
