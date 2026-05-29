@@ -263,7 +263,7 @@ function renderGalleryPage() {
     });
   });
 
-  setupAdminGalleryHover();
+
 }
 
 $("galleryPrevBtn")?.addEventListener("click", () => {
@@ -281,45 +281,45 @@ $("galleryNextBtn")?.addEventListener("click", () => {
     renderGalleryPage();
   }
 });
-function setupAdminGalleryHover() {
-  const imgs = document.querySelectorAll(".admin-gallery-img");
+let adminHoverTimer = null;
 
-  let hoverTimer = null;
-  let preview = document.getElementById("adminPhotoPreview");
+document.addEventListener("mouseover", (e) => {
+  const img = e.target.closest(".admin-gallery-img");
+  if (!img) return;
 
-  if (!preview) {
-    preview = document.createElement("div");
-    preview.id = "adminPhotoPreview";
-    preview.innerHTML = `
-      <div class="admin-photo-preview-box">
-        <img id="adminPhotoPreviewImg" src="">
-      </div>
-    `;
-    document.body.appendChild(preview);
-  }
+  clearTimeout(adminHoverTimer);
 
+  adminHoverTimer = setTimeout(() => {
+    let preview = document.getElementById("adminPhotoPreview");
+
+    if (!preview) {
+      preview = document.createElement("div");
+      preview.id = "adminPhotoPreview";
+      preview.innerHTML = `
+        <div class="admin-photo-preview-box">
+          <img id="adminPhotoPreviewImg" src="">
+        </div>
+      `;
+      document.body.appendChild(preview);
+    }
+
+    document.getElementById("adminPhotoPreviewImg").src = img.src;
+    preview.classList.add("active");
+  }, 1000);
+});
+
+document.addEventListener("mouseout", (e) => {
+  const img = e.target.closest(".admin-gallery-img");
+  if (!img) return;
+
+  clearTimeout(adminHoverTimer);
+
+  const preview = document.getElementById("adminPhotoPreview");
   const previewImg = document.getElementById("adminPhotoPreviewImg");
 
-  imgs.forEach((img) => {
-    img.addEventListener("mouseenter", () => {
-      hoverTimer = setTimeout(() => {
-        previewImg.src = img.src;
-        preview.classList.add("active");
-      }, 1000);
-    });
-
-    img.addEventListener("mouseleave", () => {
-      clearTimeout(hoverTimer);
-      preview.classList.remove("active");
-      previewImg.src = "";
-    });
-  });
-
-  preview.addEventListener("click", () => {
-    preview.classList.remove("active");
-    previewImg.src = "";
-  });
-}
+  if (preview) preview.classList.remove("active");
+  if (previewImg) previewImg.src = "";
+});
 $("galleryFirstBtn")?.addEventListener("click", () => {
   galleryPageCurrent = 1;
   renderGalleryPage();
