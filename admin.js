@@ -27,6 +27,9 @@ let galleryPageCurrent = 1;
 let storyItems = [];
 let storyPageCurrent = 1;
 
+let heroVideoItems = [];
+let heroVideoPageCurrent = 1;
+
 const loginBox = $("loginBox");
 const adminBox = $("adminBox");
 
@@ -46,10 +49,11 @@ onAuthStateChanged(auth, (user) => {
   if (loginBox) loginBox.style.display = user ? "none" : "block";
   if (adminBox) adminBox.style.display = user ? "block" : "none";
 
-  if (user) {
-    loadAdminGallery();
-    loadAdminStories();
-  }
+ if (user) {
+  loadAdminGallery();
+  loadAdminStories();
+  loadAdminHeroVideos();
+}
 });
 
 document.querySelectorAll("[data-page]").forEach((btn) => {
@@ -87,11 +91,10 @@ $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
     return alert("Video yüklenemedi");
   }
 
-  await setDoc(
-    doc(db, "siteSettings", "main"),
-    { heroVideo: data.secure_url },
-    { merge: true }
-  );
+await addDoc(collection(db, "heroVideos"), {
+  videoUrl: data.secure_url,
+  createdAt: serverTimestamp()
+});
 
   alert("Video başarıyla yüklendi");
 });
@@ -416,5 +419,141 @@ $("storyNextBtn")?.addEventListener("click", () => {
   if (storyPageCurrent < totalPages) {
     storyPageCurrent++;
     renderStoryPage();
+  }
+});
+async function loadAdminHeroVideos() {
+
+  const list = $("heroVideoAdminList");
+
+  if (!list) return;
+
+  const q = query(
+    collection(db, "heroVideos"),
+    orderBy("createdAt", "desc")
+  );
+
+  const snapshot = await getDocs(q);
+
+  heroVideoItems = [];
+
+  snapshot.forEach((docSnap) => {
+
+    heroVideoItems.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  renderHeroVideoPage();
+}
+
+function renderHeroVideoPage() {
+
+  const list = $("heroVideoAdminList");
+  const info = $("heroVideoPageInfo");
+
+  if (!list) return;
+
+  const start =
+    (heroVideoPageCurrent - 1) * pageSize;
+
+  const end =
+    start + pageSize;
+
+  const pageItems =
+    heroVideoItems.slice(start, end);
+
+  list.innerHTML = "";
+
+  pageItems.forEach((item) => {
+
+    list.innerHTML += `
+      <div class="bg-white/70 rounded-3xl overflow-hidden shadow-lg border border-rose-100 p-3">
+
+        <video
+          src="${item.videoUrl}"
+          class="w-full h-40 object-cover rounded-2xl mb-3"
+          muted
+        ></video>
+
+        <button
+          class="selectHeroVideoBtn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold w-full mb-2"
+          data-url="${item.videoUrl}"
+        >
+          Seç / Yayınla
+        </button>
+
+        <button
+          class="deleteHeroVideoBtn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold w-full"
+          data-id="${item.id}"
+        >
+          Sil
+        </button>
+
+      </div>
+    `;
+  });
+
+  const totalPages =
+    Math.ceil(heroVideoItems.length / pageSize) || 1;
+
+  if (info) {
+    info.textContent =
+      `${heroVideoPageCurrent} / ${totalPages}`;
+  }
+
+  document.querySelectorAll(".selectHeroVideoBtn").forEach((btn) => {
+
+    btn.addEventListener("click", async () => {
+
+      await setDoc(
+        doc(db, "siteSettings", "main"),
+        {
+          heroVideo: btn.dataset.url
+        },
+        { merge: true }
+      );
+
+      alert("Video yayınlandı");
+    });
+  });
+
+  document.querySelectorAll(".deleteHeroVideoBtn").forEach((btn) => {
+
+    btn.addEventListener("click", async () => {
+
+      if (!confirm("Video silinsin mi?")) return;
+
+      await deleteDoc(
+        doc(db, "heroVideos", btn.dataset.id)
+      );
+
+      alert("Video silindi");
+
+      loadAdminHeroVideos();
+    });
+  });
+}
+
+$("heroVideoPrevBtn")?.addEventListener("click", () => {
+
+  if (heroVideoPageCurrent > 1) {
+
+    heroVideoPageCurrent--;
+
+    renderHeroVideoPage();
+  }
+});
+
+$("heroVideoNextBtn")?.addEventListener("click", () => {
+
+  const totalPages =
+    Math.ceil(heroVideoItems.length / pageSize) || 1;
+
+  if (heroVideoPageCurrent < totalPages) {
+
+    heroVideoPageCurrent++;
+
+    renderHeroVideoPage();
   }
 });
