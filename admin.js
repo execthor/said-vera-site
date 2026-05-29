@@ -30,6 +30,9 @@ let storyPageCurrent = 1;
 let heroVideoItems = [];
 let heroVideoPageCurrent = 1;
 
+let dateItems = [];
+let datePageCurrent = 1;
+
 const loginBox = $("loginBox");
 const adminBox = $("adminBox");
 
@@ -51,9 +54,10 @@ onAuthStateChanged(auth, (user) => {
   if (adminBox) adminBox.style.display = user ? "block" : "none";
 
   if (user) {
-    loadAdminGallery();
-    loadAdminStories();
-    loadAdminHeroVideos();
+  loadAdminGallery();
+  loadAdminStories();
+  loadAdminHeroVideos();
+  loadAdminDates();
   }
 });
 
@@ -166,6 +170,8 @@ $("addDateBtn")?.addEventListener("click", async () => {
   });
 
   alert("Tarih eklendi");
+
+  loadAdminDates();
 });
 
 /* PLAN EKLE */
@@ -654,3 +660,97 @@ function closeAdminVideoModal() {
     modal.classList.remove("active");
   }
 }
+function formatDateTRAdmin(dateString) {
+  if (!dateString) return "";
+
+  const date = new Date(dateString);
+
+  return date.toLocaleDateString("tr-TR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+}
+
+async function loadAdminDates() {
+  const list = $("datesAdminList");
+  if (!list) return;
+
+  const q = query(collection(db, "dates"), orderBy("date", "asc"));
+  const snapshot = await getDocs(q);
+
+  dateItems = [];
+
+  snapshot.forEach((docSnap) => {
+    dateItems.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  renderDatePage();
+}
+
+function renderDatePage() {
+  const list = $("datesAdminList");
+  const info = $("datesPageInfo");
+
+  if (!list) return;
+
+  const start = (datePageCurrent - 1) * pageSize;
+  const end = start + pageSize;
+  const pageItems = dateItems.slice(start, end);
+
+  list.innerHTML = "";
+
+  pageItems.forEach((item) => {
+    list.innerHTML += `
+      <div class="date-admin-card">
+        <h3>${formatDateTRAdmin(item.date)}</h3>
+        <h4>${item.title || "Başlıksız"}</h4>
+        <p>${item.text || ""}</p>
+
+        <button
+          class="deleteDateBtn"
+          data-id="${item.id}"
+        >
+          Sil
+        </button>
+      </div>
+    `;
+  });
+
+  const totalPages = Math.ceil(dateItems.length / pageSize) || 1;
+
+  if (info) {
+    info.textContent = `${datePageCurrent} / ${totalPages}`;
+  }
+
+  document.querySelectorAll(".deleteDateBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Bu tarih silinsin mi?")) return;
+
+      await deleteDoc(doc(db, "dates", btn.dataset.id));
+
+      alert("Tarih silindi");
+
+      loadAdminDates();
+    });
+  });
+}
+
+$("datesPrevBtn")?.addEventListener("click", () => {
+  if (datePageCurrent > 1) {
+    datePageCurrent--;
+    renderDatePage();
+  }
+});
+
+$("datesNextBtn")?.addEventListener("click", () => {
+  const totalPages = Math.ceil(dateItems.length / pageSize) || 1;
+
+  if (datePageCurrent < totalPages) {
+    datePageCurrent++;
+    renderDatePage();
+  }
+});
