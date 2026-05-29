@@ -57,6 +57,20 @@
         <input id="storyTitleInput" placeholder="Başlık">
         <textarea id="storyTextInput" placeholder="Hikaye metni"></textarea>
         <button id="saveStoryBtn">Hikayeyi Kaydet</button>
+        <div class="flex items-center justify-between mt-8 mb-4">
+  <h3 class="text-xl font-bold text-rose-600">Kayıtlı Hikayeler</h3>
+
+  <div class="flex gap-3 items-center">
+    <button id="storyPrevBtn">◀</button>
+    <span id="storyPageInfo" class="px-4 py-2 bg-white rounded-xl">1 / 1</span>
+    <button id="storyNextBtn">▶</button>
+  </div>
+</div>
+
+<div
+  id="storyAdminList"
+  class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4"
+></div>
       </section>
 
       <section id="galleryPage" class="admin-page admin-card hidden">
