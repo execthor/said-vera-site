@@ -33,14 +33,33 @@ onAuthStateChanged(auth, (user) => {
   adminBox.style.display = user ? "block" : "none";
 });
 
-document.getElementById("saveHeroVideoBtn").addEventListener("click", async () => {
-  const heroVideo = document.getElementById("heroVideoUrl").value;
+document.getElementById("uploadHeroVideoBtn").addEventListener("click", async () => {
+  const file = document.getElementById("heroVideoFile").files[0];
+
+  if (!file) {
+    alert("Video seç");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "saidvera");
+
+  const response = await fetch(
+    "https://api.cloudinary.com/v1_1/dosgbutzh/video/upload",
+    {
+      method: "POST",
+      body: formData
+    }
+  );
+
+  const data = await response.json();
 
   await setDoc(doc(db, "siteSettings", "main"), {
-    heroVideo
+    heroVideo: data.secure_url
   }, { merge: true });
 
-  alert("Video kaydedildi");
+  alert("Video yüklendi ve ana video değiştirildi");
 });
 
 document.getElementById("saveStoryBtn").addEventListener("click", async () => {
