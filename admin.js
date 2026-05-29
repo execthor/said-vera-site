@@ -52,7 +52,7 @@ if (uploadHeroVideoBtn) {
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "saidvera");
+ formData.append("upload_preset", "saidvera_video");
 
     const response = await fetch(
       "https://api.cloudinary.com/v1_1/dosgbutzh/video/upload",
