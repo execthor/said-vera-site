@@ -225,6 +225,48 @@
   border-radius: 28px;
   box-shadow: 0 30px 80px rgba(0,0,0,0.55);
 }
+  #adminVideoModal {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(8px);
+}
+
+#adminVideoModal.active {
+  display: flex;
+}
+
+.admin-video-modal-box {
+  position: relative;
+  width: 70vw;
+  max-width: 1000px;
+}
+
+#adminVideoModalPlayer {
+  width: 100%;
+  max-height: 70vh;
+  border-radius: 24px;
+  background: black;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+}
+
+#adminVideoModalClose {
+  position: absolute;
+  top: -18px;
+  right: -18px;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: #e11d48;
+  color: white;
+  font-size: 30px;
+  line-height: 44px;
+  z-index: 2;
+}
 </style>
 
 <script type="module" src="admin.js"></script>
