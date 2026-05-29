@@ -320,7 +320,4 @@ document.addEventListener("mouseout", (e) => {
   if (preview) preview.classList.remove("active");
   if (previewImg) previewImg.src = "";
 });
-$("galleryFirstBtn")?.addEventListener("click", () => {
-  galleryPageCurrent = 1;
-  renderGalleryPage();
-});
+
