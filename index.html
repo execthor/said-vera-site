@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+
+<html class="dark scroll-smooth" lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="Muhammed ve Vera için hazırlanmış özel aşk sitesi." name="description"/>
+<title>Muhammed &amp; Vera</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          boxShadow: { soft: '0 10px 30px -12px rgba(0,0,0,0.25)' }
+        }
+      }
+    };
+  </script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+    .glass { background: rgba(255,255,255,.70); backdrop-filter: saturate(140%) blur(8px); }
+    .dark .glass { background: rgba(255,255,255,.06); }
+
+    /* Bölümler arası daha yumuşak ve romantik renk geçişleri */
+    .romantic-section {
+      position: relative;
+      overflow: hidden;
+    }
+    .romantic-section::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(244, 114, 182, .28), transparent 30%),
+        radial-gradient(circle at 85% 20%, rgba(251, 113, 133, .24), transparent 34%),
+        linear-gradient(135deg, rgba(255, 241, 242, .95), rgba(252, 231, 243, .88), rgba(255, 255, 255, .92));
+    }
+    .dark .romantic-section::before {
+      background:
+        radial-gradient(circle at 15% 10%, rgba(190, 24, 93, .32), transparent 32%),
+        radial-gradient(circle at 85% 20%, rgba(225, 29, 72, .25), transparent 34%),
+        linear-gradient(135deg, rgba(24, 24, 27, .98), rgba(76, 5, 25, .62), rgba(39, 39, 42, .98));
+    }
+    .section-divider {
+      height: 90px;
+      background: linear-gradient(180deg, rgba(255,255,255,0), rgba(244,114,182,.20), rgba(255,255,255,0));
+      pointer-events: none;
+    }
+    .dark .section-divider {
+      background: linear-gradient(180deg, rgba(24,24,27,0), rgba(190,24,93,.28), rgba(24,24,27,0));
+    }
+
+    /* Daha yoğun kalp animasyonu */
+    .heart {
+      position: fixed;
+      top: -30px;
+      animation: fall linear forwards;
+      pointer-events: none;
+      z-index: 20;
+      filter: drop-shadow(0 0 8px rgba(244, 114, 182, .55));
+      opacity: .92;
+    }
+    @keyframes fall {
+      0% { transform: translateY(-40px) rotate(0deg) scale(.85); opacity: 0; }
+      10% { opacity: .95; }
+      100% { transform: translateY(112vh) rotate(360deg) scale(1.15); opacity: 0; }
+    }
+  </style>
+<style>
+.gallery-hover {
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    cursor: pointer;
+}
+
+.gallery-hover:hover {
+    transform: scale(1.12);
+    z-index: 50;
+    position: relative;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.45);
+}
+</style><style>
+/* Galeri küçük hover efekti */
+.gallery-hover {
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .gallery-hover:hover {
+    transform: scale(1.06);
+    z-index: 20;
+    position: relative;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+  }
+}
+
+/* Fotoğraf büyütme modalı */
+.photo-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  padding: 24px;
+}
+
+.photo-modal.active {
+  display: flex;
+}
+
+.photo-modal-box {
+  position: relative;
+  max-width: 70vw;
+  max-height: 70vh;
+  animation: photoZoomIn 0.25s ease;
+}
+
+.photo-modal img {
+  width: auto;
+  height: auto;
+  max-width: 70vw;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: 22px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+}
+
+.photo-modal-close {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #fb7185, #ec4899);
+  color: white;
+  font-size: 26px;
+  line-height: 42px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+}
+
+.photo-modal-close:hover {
+  transform: scale(1.08);
+}
+
+@keyframes photoZoomIn {
+  from {
+    transform: scale(0.86);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Mobil ve tablet: ekranın tamamını kaplamasın, %70 civarı kalsın */
+@media (max-width: 1024px) {
+  .photo-modal {
+    padding: 16px;
+  }
+
+  .photo-modal-box,
+  .photo-modal img {
+    max-width: 70vw;
+    max-height: 70vh;
+  }
+
+  .photo-modal-close {
+    top: -12px;
+    right: -12px;
+    width: 38px;
+    height: 38px;
+    font-size: 24px;
+    line-height: 38px;
+  }
+}
+</style><style>
+html {
+  scroll-behavior: smooth;
+}
+
+/* Bölüm geçişleri */
+section {
+  position: relative;
+  transition: all 0.8s ease;
+}
+
+/* Narin fade animasyonu */
+.fade-soft {
+  opacity: 0;
+  transform: translateY(35px);
+  transition:
+    opacity 1.2s ease,
+    transform 1.2s ease;
+}
+
+.fade-soft.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Navbar geçişleri */
+nav a {
+  transition:
+    color 0.45s ease,
+    transform 0.45s ease,
+    opacity 0.45s ease;
+}
+
+nav a:hover {
+  transform: translateY(-2px);
+  opacity: 0.88;
+}
+
+/* Butonlar */
+button,
+a {
+  transition:
+    all 0.45s ease;
+}
+
+/* Kartlar */
+.rounded-2xl,
+.rounded-3xl {
+  transition:
+    transform 0.55s ease,
+    box-shadow 0.55s ease,
+    background 0.55s ease;
+}
+
+.rounded-2xl:hover,
+.rounded-3xl:hover {
+  transform: translateY(-4px);
+}
+
+/* Bölüm arası renk akışı */
+section::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 100%;
+  height: 140px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0),
+    rgba(255,192,203,0.08),
+    rgba(255,255,255,0)
+  );
+  pointer-events: none;
+}
+</style></head>
+<body class="min-h-screen bg-gradient-to-br from-rose-100 via-pink-50 to-white dark:from-zinc-950 dark:via-rose-950 dark:to-zinc-900 text-zinc-800 dark:text-zinc-100">
+<header class="sticky top-0 z-40 border-b border-rose-200/50 dark:border-rose-900/50 bg-gradient-to-r from-rose-200 via-pink-300 to-rose-200 dark:from-zinc-950 dark:via-rose-900 dark:to-zinc-950 backdrop-blur-md shadow-md">
+<div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+<a class="flex items-center gap-2 font-semibold" href="#home">
+<i class="w-5 h-5 text-rose-500" data-lucide="heart"></i>
+<span id="brand">Muhammed &amp; Vera</span>
+</a>
+<button aria-label="Menüyü aç/kapat" class="md:hidden p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10" id="menuBtn">
+<i class="w-6 h-6" data-lucide="menu"></i>
+</button>
+<nav class="hidden md:flex md:flex-row flex-col items-center justify-center absolute md:static top-16 left-0 w-full md:w-auto bg-white dark:bg-zinc-900 md:bg-transparent md:dark:bg-transparent gap-6 text-lg font-medium p-6 md:p-0 text-center z-50" id="menu">
+<a class="flex items-center gap-2 hover:text-rose-500 transition text-lg font-semibold" href="#home"><i class="w-5 h-5" data-lucide="home"></i> Anasayfa</a>
+<a class="flex items-center gap-2 hover:text-rose-500 transition text-lg font-semibold" href="#story"><i class="w-5 h-5" data-lucide="file-text"></i> Hikayemiz</a>
+<a class="flex items-center gap-2 hover:text-rose-500 transition text-lg font-semibold" href="#gallery"><i class="w-5 h-5" data-lucide="images"></i> Galeri</a>
+<a class="flex items-center gap-2 hover:text-rose-500 transition text-lg font-semibold" href="#dates"><i class="w-5 h-5" data-lucide="calendar"></i> Tarihler</a>
+<a class="flex items-center gap-2 hover:text-rose-500 transition text-lg font-semibold" href="#todo">
+<i class="w-5 h-5" data-lucide="list-todo"></i>
+Planlarımız
+</a>
+<a class="flex items-center gap-2 hover:text-rose-500 transition text-lg font-semibold" href="#music"><i class="w-5 h-5" data-lucide="music"></i> Müzik</a>
+<a class="flex items-center gap-2 hover:text-rose-500 transition text-lg font-semibold" href="#contact"><i class="w-5 h-5" data-lucide="mail"></i> İletişim</a>
+</nav>
+<button class="hidden md:flex p-2 rounded-xl border border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10" id="themeToggle" title="Tema Değiştir">
+<i class="w-5 h-5" data-lucide="sun"></i>
+</button>
+</div>
+</header>
+<main>
+<section class="relative overflow-hidden fade-soft" id="home">
+<div class="absolute inset-0 -z-10 opacity-50 bg-gradient-to-br from-rose-400 via-pink-300 to-rose-100 dark:from-rose-900/60 dark:via-pink-900/35 dark:to-rose-700/20"></div>
+<div class="max-w-6xl mx-auto px-6 py-16 md:py-24 grid md:grid-cols-2 gap-8 items-center">
+<div>
+<span class="inline-flex items-center rounded-full px-3 py-1 text-sm bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
+<i class="w-4 h-4 mr-1" data-lucide="map-pin"></i>
+            İzmir &amp; Şırnak
+          </span>
+<h1 class="mt-4 text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent drop-shadow-lg">Hayat Senle Birlikte Daha Güzel</h1>
+<p class="mt-6 text-lg text-zinc-700 dark:text-zinc-200">Birlikte yazdığımız en güzel hikaye...</p>
+<p class="mt-4 text-lg opacity-80">Sonsuz Aşka ...</p>
+<div class="mt-6 flex flex-wrap items-center gap-3">
+<span class="text-sm opacity-80">Birlikte</span>
+<span class="text-2xl font-bold px-3 py-1 rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200" id="togetherDays">0 gün</span>
+<span class="text-sm">💞</span>
+</div>
+<div class="mt-6 flex gap-3">
+<a class="px-4 py-2 rounded-xl text-white shadow-md bg-gradient-to-r from-rose-500 to-pink-500" href="#gallery">Fotoğraflara Bak</a>
+<a class="px-4 py-2 rounded-xl border border-black/10 dark:border-white/10" href="#story">Hikayemiz</a>
+</div>
+</div>
+<div class="relative w-full overflow-hidden rounded-3xl border border-black/5 dark:border-white/10 shadow-lg bg-black/10"><video autoplay="True" class="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70" id="heroVideo" loop="True" muted="True" playsinline="True"><source id="heroVideoSource" src="videos/hero_fixed.mp4" type="video/mp4"/></video></div>
+</div>
+</section>
+<div class="section-divider"></div>
+<section class="romantic-section scroll-mt-24 py-20 fade-soft" id="story">
+<div class="max-w-6xl mx-auto px-6 text-center">
+<h2 class="text-4xl font-bold mb-12" id="storyTitle">Hikayemiz</h2>
+<div class="glass rounded-3xl p-6 md:p-10 shadow-soft text-left leading-8 text-lg"><p id="storyText"></p></div>
+</div>
+</section>
+<div class="section-divider"></div>
+<section class="romantic-section py-20 fade-soft" id="gallery">
+<div class="max-w-6xl mx-auto px-6 text-center">
+<h2 class="text-4xl font-bold mb-12">🖼️ Galeri</h2>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 justify-center" id="galleryContainer"></div><p class="text-center text-sm opacity-70 mt-6">Yatay fotoğraflar en altta geniş şekilde sıralanır.</p>
+</div>
+</section>
+<div class="section-divider"></div>
+<section class="romantic-section scroll-mt-24 py-20 fade-soft" id="dates">
+<div class="max-w-6xl mx-auto px-6">
+<div class="flex items-center gap-3 mb-8">
+<div class="p-2 rounded-2xl bg-rose-100 dark:bg-rose-900/40"><i class="w-5 h-5 text-rose-500" data-lucide="calendar"></i></div>
+<h2 class="text-2xl md:text-3xl font-semibold tracking-tight">Önemli Tarihler</h2>
+</div>
+<div class="grid md:grid-cols-3 gap-6" id="datesContainer"></div>
+</div>
+</section>
+<div class="section-divider"></div>
+<section class="romantic-section scroll-mt-24 py-20 fade-soft" id="todo">
+<div class="max-w-6xl mx-auto px-6">
+<div class="flex items-center gap-3 mb-8">
+<div class="p-2 rounded-2xl bg-rose-100 dark:bg-rose-900/40"><i class="w-5 h-5 text-rose-500" data-lucide="list-todo"></i></div>
+<h2 class="text-2xl md:text-3xl font-semibold tracking-tight">Planlarımız</h2>
+</div>
+<div class="grid md:grid-cols-2 gap-6" id="plansContainer"></div>
+</div>
+</section>
+<div class="section-divider"></div>
+<section class="romantic-section scroll-mt-24 py-20 fade-soft" id="music">
+<div class="max-w-6xl mx-auto px-6">
+<div class="flex items-center gap-3 mb-8">
+<div class="p-2 rounded-2xl bg-rose-100 dark:bg-rose-900/40"><i class="w-5 h-5 text-rose-500" data-lucide="music"></i></div>
+<h2 class="text-2xl md:text-3xl font-semibold tracking-tight">Müzik Listemiz</h2>
+</div>
+<div class="rounded-2xl border border-black/5 dark:border-white/10 bg-rose-100 dark:bg-rose-900/40 overflow-hidden shadow-soft" id="musicContainer"></div>
+</div>
+</section>
+<div class="section-divider"></div>
+<section class="romantic-section scroll-mt-24 py-20 fade-soft" id="contact">
+<div class="max-w-6xl mx-auto px-6">
+<div class="flex items-center gap-3 mb-8">
+<div class="p-2 rounded-2xl bg-rose-100 dark:bg-rose-900/40"><i class="w-5 h-5 text-rose-500" data-lucide="mail"></i></div>
+<h2 class="text-2xl md:text-3xl font-semibold tracking-tight">İletişim</h2>
+</div>
+<div class="grid md:grid-cols-2 gap-6">
+<a class="rounded-2xl border border-black/5 dark:border-white/10 p-5 glass shadow-soft flex items-center gap-3" href="https://www.instagram.com/said_akgz/" rel="noreferrer" target="_blank"><i class="w-5 h-5" data-lucide="instagram"></i> Muhammed Instagram</a>
+<a class="rounded-2xl border border-black/5 dark:border-white/10 p-5 glass shadow-soft flex items-center gap-3" href="https://www.instagram.com/vera.tekin/" rel="noreferrer" target="_blank"><i class="w-5 h-5" data-lucide="instagram"></i> Vera Instagram</a>
+</div>
+</div>
+</section>
+<div class="section-divider"></div>
+<section class="romantic-section scroll-mt-24 py-20 fade-soft" id="secret">
+<div class="max-w-lg mx-auto px-6 text-center">
+<h2 class="text-2xl md:text-3xl font-semibold tracking-tight mb-6">🔒 Gizli Mesaj</h2>
+<div class="flex flex-col sm:flex-row justify-center items-center gap-3">
+<input class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-zinc-800 w-full sm:w-auto" id="secretPass" placeholder="İlk buluştuğumuz yer" type="password"/>
+<button class="px-4 py-2 rounded-lg bg-rose-500 text-white shadow w-full sm:w-auto" id="secretBtn">Göster</button>
+</div>
+<div id="secretMessage"></div>
+</div>
+</section>
+</main>
+<footer class="mt-16 py-8 bg-gradient-to-r from-rose-200 via-pink-300 to-rose-200 dark:from-zinc-950 dark:via-rose-900 dark:to-zinc-950 text-center text-zinc-700 dark:text-zinc-100">
+<p class="text-lg">Sonsuza kadar 💕 Muhammed &amp; Vera</p>
+</footer>
+<script>
+    const START_DATE = '2025-01-11';
+
+    function daysBetween(start) {
+      const s = new Date(start);
+      const now = new Date();
+      s.setHours(0, 0, 0, 0);
+      now.setHours(0, 0, 0, 0);
+      return Math.max(0, Math.floor((now - s) / 86400000));
+    }
+
+    function createHeart() {
+      const heart = document.createElement('div');
+      const hearts = ['💖', '💕', '💗', '💘', '❤️'];
+      const size = 16 + Math.random() * 18;
+
+      heart.className = 'heart';
+      heart.style.left = Math.random() * 100 + 'vw';
+      heart.style.fontSize = size + 'px';
+      heart.style.animationDuration = 4 + Math.random() * 3 + 's';
+      heart.style.animationDelay = Math.random() * .4 + 's';
+      heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 8000);
+    }
+
+    function createHeartBurst(count = 3) {
+      for (let i = 0; i < count; i++) {
+        setTimeout(createHeart, i * 120);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const togetherDays = document.getElementById('togetherDays');
+      if (togetherDays) togetherDays.textContent = daysBetween(START_DATE) + ' gün';
+
+      const menuBtn = document.getElementById('menuBtn');
+      const menu = document.getElementById('menu');
+      if (menuBtn && menu) {
+        menuBtn.addEventListener('click', () => menu.classList.toggle('hidden'));
+      }
+
+      const themeBtn = document.getElementById('themeToggle');
+      if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+          const root = document.documentElement;
+          root.classList.toggle('dark');
+          themeBtn.innerHTML = `<i data-lucide="${root.classList.contains('dark') ? 'sun' : 'moon'}" class="w-5 h-5"></i>`;
+          lucide.createIcons();
+        });
+      }
+
+      const secretBtn = document.getElementById('secretBtn');
+      const secretPass = document.getElementById('secretPass');
+      const secretMessage = document.getElementById('secretMessage');
+      if (secretBtn && secretPass && secretMessage) {
+        secretBtn.addEventListener('click', () => {
+          if (secretPass.value.trim().toLocaleLowerCase('tr-TR') === 'afyon') {
+            secretMessage.classList.remove('hidden');
+          } else {
+            alert('Yanlış şifre!');
+          }
+        });
+      }
+
+      setInterval(() => createHeartBurst(2), 650);
+      createHeartBurst(10);
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
+<div aria-hidden="true" class="photo-modal" id="photoModal"><div class="photo-modal-box"><button aria-label="Fotoğrafı kapat" class="photo-modal-close" id="photoModalClose" type="button">×</button><img alt="Büyütülmüş fotoğraf" id="photoModalImg" src=""/></div></div><script>
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("photoModal");
+  const modalImg = document.getElementById("photoModalImg");
+  const closeBtn = document.getElementById("photoModalClose");
+  const photos = document.querySelectorAll("[data-gallery-photo='true']");
+  const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+  let hoverTimer = null;
+
+  function openPhoto(img) {
+    modalImg.src = img.src;
+    modalImg.alt = img.alt || "Büyütülmüş fotoğraf";
+    modal.classList.add("active");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closePhoto() {
+    modal.classList.remove("active");
+    modal.setAttribute("aria-hidden", "true");
+    modalImg.src = "";
+    document.body.style.overflow = "";
+    if (hoverTimer) {
+      clearTimeout(hoverTimer);
+      hoverTimer = null;
+    }
+  }
+
+  photos.forEach(function (img) {
+    if (canHover) {
+      img.addEventListener("mouseenter", function () {
+        hoverTimer = setTimeout(function () {
+          openPhoto(img);
+        }, 1500);
+      });
+
+      img.addEventListener("mouseleave", function () {
+        if (hoverTimer) {
+          clearTimeout(hoverTimer);
+          hoverTimer = null;
+        }
+      });
+    }
+
+    // Mobil/tablet için dokununca açılmaya devam eder
+    img.addEventListener("click", function () {
+      if (!canHover) {
+        openPhoto(img);
+      }
+    });
+
+    img.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openPhoto(img);
+      }
+    });
+  });
+
+  closeBtn.addEventListener("click", closePhoto);
+
+  modal.addEventListener("click", function (event) {
+    if (event.target === modal) {
+      closePhoto();
+    }
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && modal.classList.contains("active")) {
+      closePhoto();
+    }
+  });
+});
+</script><script>
+document.addEventListener("DOMContentLoaded", () => {
+  const sections = document.querySelectorAll(".fade-soft");
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("visible");
+      }
+    });
+  }, {
+    threshold: 0.12
+  });
+
+  sections.forEach((sec) => observer.observe(sec));
+});
+</script><script>
+document.addEventListener("DOMContentLoaded", function () {
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+});
+</script><script>
+document.addEventListener("DOMContentLoaded", function () {
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+});
+</script><script>
+document.addEventListener("DOMContentLoaded", function () {
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+});
+</script><script>
+document.addEventListener("DOMContentLoaded", function () {
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+});
+</script><script src="site.js" type="module"></script></body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vera Admin Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-rose-100 via-pink-100 to-red-100 text-rose-950">
+
+<div class="min-h-screen flex">
+
+  <aside class="hidden md:flex w-72 bg-white/40 backdrop-blur-xl border-r border-white/50 p-6 flex-col">
+    <h1 class="text-3xl font-bold text-rose-600 mb-2">Vera Panel</h1>
+    <p class="text-sm text-rose-700 mb-8">Aşk dolu site yönetimi</p>
+
+    <nav class="space-y-3 text-rose-800 font-semibold">
+      <a href="#video" class="block bg-white/50 rounded-2xl px-4 py-3 hover:bg-rose-200 transition">🎥 Ana Video</a>
+      <a href="#story" class="block bg-white/50 rounded-2xl px-4 py-3 hover:bg-rose-200 transition">📖 Hikayemiz</a>
+      <a href="#gallery" class="block bg-white/50 rounded-2xl px-4 py-3 hover:bg-rose-200 transition">🖼️ Galeri</a>
+      <a href="#dates" class="block bg-white/50 rounded-2xl px-4 py-3 hover:bg-rose-200 transition">📅 Önemli Tarihler</a>
+      <a href="#plans" class="block bg-white/50 rounded-2xl px-4 py-3 hover:bg-rose-200 transition">📝 Planlarımız</a>
+      <a href="#music" class="block bg-white/50 rounded-2xl px-4 py-3 hover:bg-rose-200 transition">🎵 Müzik Listesi</a>
+      <a href="#secret" class="block bg-white/50 rounded-2xl px-4 py-3 hover:bg-rose-200 transition">💌 Gizli Mesaj</a>
+    </nav>
+  </aside>
+
+  <main class="flex-1 p-5 md:p-10">
+
+    <div id="loginBox" class="max-w-md mx-auto mt-24 bg-white/60 backdrop-blur-xl rounded-3xl shadow-xl p-8 border border-white/60">
+      <h2 class="text-3xl font-bold text-rose-600 mb-6 text-center">Admin Girişi</h2>
+
+      <input id="email" type="email" placeholder="E-posta"
+        class="w-full mb-4 rounded-2xl px-4 py-3 bg-white/70 border border-rose-200 outline-none focus:ring-2 focus:ring-rose-300">
+
+      <input id="password" type="password" placeholder="Şifre"
+        class="w-full mb-6 rounded-2xl px-4 py-3 bg-white/70 border border-rose-200 outline-none focus:ring-2 focus:ring-rose-300">
+
+      <button id="loginBtn"
+        class="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-2xl py-3 transition">
+        Giriş Yap
+      </button>
+    </div>
+
+    <div id="adminBox" style="display:none;">
+
+      <div class="mb-10">
+        <h1 class="text-4xl font-bold text-rose-600">Hoş geldin Said 🌹</h1>
+        <p class="text-rose-700 mt-2">Buradan sitendeki tüm özel alanları yönetebilirsin.</p>
+      </div>
+
+      <section id="video" class="admin-card">
+        <h2>🎥 Ana Video</h2>
+        <input id="heroVideoUrl" placeholder="Örnek: videos/hero_fixed.mp4">
+        <button id="saveHeroVideoBtn">Videoyu Kaydet</button>
+      </section>
+
+      <section id="story" class="admin-card">
+        <h2>📖 Hikayemiz</h2>
+        <input id="storyTitleInput" placeholder="Başlık">
+        <textarea id="storyTextInput" placeholder="Hikaye metni"></textarea>
+        <button id="saveStoryBtn">Hikayeyi Kaydet</button>
+      </section>
+
+      <section id="gallery" class="admin-card">
+        <h2>🖼️ Galeri</h2>
+        <input id="photoFile" type="file">
+        <input id="photoTitle" placeholder="Fotoğraf başlığı">
+        <button id="uploadPhotoBtn">Fotoğraf Yükle</button>
+      </section>
+
+      <section id="dates" class="admin-card">
+        <h2>📅 Önemli Tarihler</h2>
+        <input id="dateTitle" placeholder="Başlık">
+        <input id="dateValue" type="date">
+        <textarea id="dateText" placeholder="Açıklama"></textarea>
+        <button id="addDateBtn">Tarih Ekle</button>
+      </section>
+
+      <section id="plans" class="admin-card">
+        <h2>📝 Planlarımız</h2>
+        <input id="planTitle" placeholder="Plan başlığı">
+        <textarea id="planText" placeholder="Plan açıklaması"></textarea>
+        <button id="addPlanBtn">Plan Ekle</button>
+      </section>
+
+      <section id="music" class="admin-card">
+        <h2>🎵 Müzik Listesi</h2>
+        <input id="musicTitle" placeholder="Şarkı adı">
+        <input id="musicArtist" placeholder="Sanatçı">
+        <input id="musicUrl" placeholder="YouTube / Spotify linki">
+        <button id="addMusicBtn">Müzik Ekle</button>
+      </section>
+
+      <section id="secret" class="admin-card">
+        <h2>💌 Gizli Mesaj</h2>
+        <textarea id="secretMessageInput" placeholder="Gizli mesaj"></textarea>
+        <button id="saveSecretBtn">Gizli Mesajı Kaydet</button>
+      </section>
+
+      <button id="logoutBtn"
+        class="mt-8 bg-red-500 hover:bg-red-600 text-white font-bold px-8 py-3 rounded-2xl transition">
+        Çıkış Yap
+      </button>
+
+    </div>
+  </main>
+</div>
+
+<style>
+  html {
+    scroll-behavior: smooth;
+  }
+
+  .admin-card {
+    background: rgba(255, 255, 255, 0.58);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: 28px;
+    padding: 28px;
+    margin-bottom: 26px;
+    box-shadow: 0 18px 45px rgba(244, 63, 94, 0.15);
+  }
+
+  .admin-card h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #e11d48;
+    margin-bottom: 18px;
+  }
+
+  .admin-card input,
+  .admin-card textarea {
+    width: 100%;
+    margin-bottom: 14px;
+    border-radius: 18px;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.8);
+    border: 1px solid #fecdd3;
+    outline: none;
+  }
+
+  .admin-card textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  .admin-card input:focus,
+  .admin-card textarea:focus {
+    border-color: #fb7185;
+    box-shadow: 0 0 0 3px rgba(251, 113, 133, 0.25);
+  }
+
+  .admin-card button {
+    background: linear-gradient(135deg, #f43f5e, #ec4899);
+    color: white;
+    font-weight: 800;
+    padding: 12px 22px;
+    border-radius: 18px;
+    transition: 0.25s;
+  }
+
+  .admin-card button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(244, 63, 94, 0.25);
+  }
+</style>
+
+<script type="module" src="admin.js"></script>
+</body>
+</html>
