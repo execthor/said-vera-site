@@ -220,12 +220,24 @@ function renderGalleryPage() {
 
   pageItems.forEach((item) => {
     list.innerHTML += `
-      <div class="bg-white/70 rounded-3xl overflow-hidden shadow-lg border border-rose-100">
-        <img src="${item.imageUrl}" class="w-full h-40 object-cover">
+      <div class="relative bg-white/70 rounded-3xl overflow-hidden shadow-lg border border-rose-100 group">
+        <img 
+          src="${item.imageUrl}" 
+          class="admin-gallery-img w-full h-40 object-cover cursor-pointer"
+          alt="${item.title || "Galeri fotoğrafı"}"
+        >
+
         <div class="p-4">
-          <h3 class="font-bold text-rose-600 text-lg mb-2">
+          <h3 class="font-bold text-rose-600 text-lg mb-3">
             ${item.title || "Başlıksız"}
           </h3>
+
+          <button 
+            class="deleteGalleryBtn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold"
+            data-id="${item.id}"
+          >
+            Sil
+          </button>
         </div>
       </div>
     `;
@@ -236,6 +248,22 @@ function renderGalleryPage() {
   if (info) {
     info.textContent = `${galleryPageCurrent} / ${totalPages}`;
   }
+
+  document.querySelectorAll(".deleteGalleryBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id;
+
+      if (!confirm("Bu fotoğraf silinsin mi?")) return;
+
+      await deleteDoc(doc(db, "gallery", id));
+
+      alert("Fotoğraf silindi");
+
+      loadAdminGallery();
+    });
+  });
+
+  setupAdminGalleryHover();
 }
 
 $("galleryPrevBtn")?.addEventListener("click", () => {
