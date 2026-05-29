@@ -6,171 +6,147 @@
   <title>Vera Admin Panel</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-
 <body class="min-h-screen bg-gradient-to-br from-rose-100 via-pink-100 to-red-100 text-rose-950">
 
 <div class="min-h-screen flex">
-
-  <aside class="hidden md:flex w-72 bg-white/40 backdrop-blur-xl border-r border-white/50 p-6 flex-col">
+  <aside class="hidden md:flex w-72 bg-white/40 backdrop-blur-xl border-r border-white/50 p-6 flex-col sticky top-0 h-screen">
     <h1 class="text-3xl font-bold text-rose-600 mb-2">Vera Panel</h1>
     <p class="text-sm text-rose-700 mb-8">Aşk dolu site yönetimi</p>
 
     <nav class="space-y-3 text-rose-800 font-semibold">
-      <a href="#video" class="block bg-white/50 rounded-2xl px-4 py-3 hover:bg-rose-200 transition">🎥 Ana Video</a>
-      <a href="#story" class="block bg-white/50 rounded-2xl px-4 py-3 hover:bg-rose-200 transition">📖 Hikayemiz</a>
-      <a href="#gallery" class="block bg-white/50 rounded-2xl px-4 py-3 hover:bg-rose-200 transition">🖼️ Galeri</a>
-      <a href="#dates" class="block bg-white/50 rounded-2xl px-4 py-3 hover:bg-rose-200 transition">📅 Önemli Tarihler</a>
-      <a href="#plans" class="block bg-white/50 rounded-2xl px-4 py-3 hover:bg-rose-200 transition">📝 Planlarımız</a>
-      <a href="#music" class="block bg-white/50 rounded-2xl px-4 py-3 hover:bg-rose-200 transition">🎵 Müzik Listesi</a>
-      <a href="#secret" class="block bg-white/50 rounded-2xl px-4 py-3 hover:bg-rose-200 transition">💌 Gizli Mesaj</a>
+      <button data-page="videoPage" class="menu-btn active-menu">🎥 Ana Video</button>
+      <button data-page="storyPage" class="menu-btn">📖 Hikayemiz</button>
+      <button data-page="galleryPage" class="menu-btn">🖼️ Galeri</button>
+      <button data-page="datesPage" class="menu-btn">📅 Önemli Tarihler</button>
+      <button data-page="plansPage" class="menu-btn">📝 Planlarımız</button>
+      <button data-page="musicPage" class="menu-btn">🎵 Müzik Listesi</button>
+      <button data-page="secretPage" class="menu-btn">💌 Gizli Mesaj</button>
     </nav>
   </aside>
 
   <main class="flex-1 p-5 md:p-10">
-
     <div id="loginBox" class="max-w-md mx-auto mt-24 bg-white/60 backdrop-blur-xl rounded-3xl shadow-xl p-8 border border-white/60">
       <h2 class="text-3xl font-bold text-rose-600 mb-6 text-center">Admin Girişi</h2>
-
-      <input id="email" type="email" placeholder="E-posta"
-        class="w-full mb-4 rounded-2xl px-4 py-3 bg-white/70 border border-rose-200 outline-none focus:ring-2 focus:ring-rose-300">
-
-      <input id="password" type="password" placeholder="Şifre"
-        class="w-full mb-6 rounded-2xl px-4 py-3 bg-white/70 border border-rose-200 outline-none focus:ring-2 focus:ring-rose-300">
-
-      <button id="loginBtn"
-        class="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-2xl py-3 transition">
-        Giriş Yap
-      </button>
+      <input id="email" type="email" placeholder="E-posta" class="w-full mb-4 rounded-2xl px-4 py-3 bg-white/70 border border-rose-200 outline-none focus:ring-2 focus:ring-rose-300">
+      <input id="password" type="password" placeholder="Şifre" class="w-full mb-6 rounded-2xl px-4 py-3 bg-white/70 border border-rose-200 outline-none focus:ring-2 focus:ring-rose-300">
+      <button id="loginBtn" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-2xl py-3 transition">Giriş Yap</button>
     </div>
 
     <div id="adminBox" style="display:none;">
-
       <div class="mb-10">
-        <h1 class="text-4xl font-bold text-rose-600">Hoş geldin Said & Vera </h1>
-        <p class="text-rose-700 mt-2">Buradan sitendeki tüm özel alanları yönetebilirsin.</p>
+        <h1 class="text-4xl font-bold text-rose-600">Hoş geldin Said & Vera 🌹</h1>
+        <p class="text-rose-700 mt-2">Her menü artık ayrı sayfa gibi çalışır. Kayıtlar 5x5 kartlarla listelenir.</p>
       </div>
 
-      <section id="video" class="admin-card">
-  <h2>🎥 Ana Video</h2>
+      <section id="videoPage" class="admin-page admin-card">
+        <h2>🎥 Ana Video</h2>
+        <input id="heroVideoFile" type="file" accept="video/*">
+        <button id="uploadHeroVideoBtn">Video Yükle</button>
+      </section>
 
-  <input 
-    id="heroVideoFile"
-    type="file"
-    accept="video/*"
-  >
-
-  <button id="uploadHeroVideoBtn">Video Yükle</button>
-</section>
-
-      <section id="story" class="admin-card">
+      <section id="storyPage" class="admin-page admin-card hidden">
         <h2>📖 Hikayemiz</h2>
         <input id="storyTitleInput" placeholder="Başlık">
         <textarea id="storyTextInput" placeholder="Hikaye metni"></textarea>
         <button id="saveStoryBtn">Hikayeyi Kaydet</button>
       </section>
 
-      <section id="gallery" class="admin-card">
-        <h2>🖼️ Galeri</h2>
-        <input id="photoFile" type="file">
-        <input id="photoTitle" placeholder="Fotoğraf başlığı">
-        <button id="uploadPhotoBtn">Fotoğraf Yükle</button>
+      <section id="galleryPage" class="admin-page admin-card hidden">
+        <div class="admin-title-row">
+          <h2>🖼️ Galeri</h2>
+          <div class="pager-box">
+            <button id="galleryPrevBtn">◀</button>
+            <span id="galleryPageInfo">1 / 1</span>
+            <button id="galleryNextBtn">▶</button>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-4 mb-6">
+          <input id="photoFile" type="file" accept="image/*">
+          <input id="photoTitle" placeholder="Fotoğraf başlığı">
+        </div>
+        <button id="uploadPhotoBtn" class="mb-8">Fotoğraf Yükle</button>
+        <div id="galleryAdminList" class="admin-grid"></div>
       </section>
 
-      <section id="dates" class="admin-card">
-        <h2>📅 Önemli Tarihler</h2>
+      <section id="datesPage" class="admin-page admin-card hidden">
+        <div class="admin-title-row">
+          <h2>📅 Önemli Tarihler</h2>
+          <div class="pager-box">
+            <button id="datesPrevBtn">◀</button>
+            <span id="datesPageInfo">1 / 1</span>
+            <button id="datesNextBtn">▶</button>
+          </div>
+        </div>
         <input id="dateTitle" placeholder="Başlık">
         <input id="dateValue" type="date">
         <textarea id="dateText" placeholder="Açıklama"></textarea>
-        <button id="addDateBtn">Tarih Ekle</button>
+        <button id="addDateBtn" class="mb-8">Tarih Ekle</button>
+        <div id="datesAdminList" class="admin-grid"></div>
       </section>
 
-      <section id="plans" class="admin-card">
-        <h2>📝 Planlarımız</h2>
+      <section id="plansPage" class="admin-page admin-card hidden">
+        <div class="admin-title-row">
+          <h2>📝 Planlarımız</h2>
+          <div class="pager-box">
+            <button id="plansPrevBtn">◀</button>
+            <span id="plansPageInfo">1 / 1</span>
+            <button id="plansNextBtn">▶</button>
+          </div>
+        </div>
         <input id="planTitle" placeholder="Plan başlığı">
         <textarea id="planText" placeholder="Plan açıklaması"></textarea>
-        <button id="addPlanBtn">Plan Ekle</button>
+        <button id="addPlanBtn" class="mb-8">Plan Ekle</button>
+        <div id="plansAdminList" class="admin-grid"></div>
       </section>
 
-      <section id="music" class="admin-card">
-        <h2>🎵 Müzik Listesi</h2>
+      <section id="musicPage" class="admin-page admin-card hidden">
+        <div class="admin-title-row">
+          <h2>🎵 Müzik Listesi</h2>
+          <div class="pager-box">
+            <button id="musicPrevBtn">◀</button>
+            <span id="musicPageInfo">1 / 1</span>
+            <button id="musicNextBtn">▶</button>
+          </div>
+        </div>
         <input id="musicTitle" placeholder="Şarkı adı">
         <input id="musicArtist" placeholder="Sanatçı">
         <input id="musicUrl" placeholder="YouTube / Spotify linki">
-        <button id="addMusicBtn">Müzik Ekle</button>
+        <button id="addMusicBtn" class="mb-8">Müzik Ekle</button>
+        <div id="musicAdminList" class="admin-grid"></div>
       </section>
 
-      <section id="secret" class="admin-card">
+      <section id="secretPage" class="admin-page admin-card hidden">
         <h2>💌 Gizli Mesaj</h2>
         <textarea id="secretMessageInput" placeholder="Gizli mesaj"></textarea>
         <button id="saveSecretBtn">Gizli Mesajı Kaydet</button>
       </section>
 
-      <button id="logoutBtn"
-        class="mt-8 bg-red-500 hover:bg-red-600 text-white font-bold px-8 py-3 rounded-2xl transition">
-        Çıkış Yap
-      </button>
-
+      <button id="logoutBtn" class="mt-8 bg-red-500 hover:bg-red-600 text-white font-bold px-8 py-3 rounded-2xl transition">Çıkış Yap</button>
     </div>
   </main>
 </div>
 
 <style>
-  html {
-    scroll-behavior: smooth;
-  }
-
-  .admin-card {
-    background: rgba(255, 255, 255, 0.58);
-    backdrop-filter: blur(18px);
-    border: 1px solid rgba(255, 255, 255, 0.65);
-    border-radius: 28px;
-    padding: 28px;
-    margin-bottom: 26px;
-    box-shadow: 0 18px 45px rgba(244, 63, 94, 0.15);
-  }
-
-  .admin-card h2 {
-    font-size: 24px;
-    font-weight: 800;
-    color: #e11d48;
-    margin-bottom: 18px;
-  }
-
-  .admin-card input,
-  .admin-card textarea {
-    width: 100%;
-    margin-bottom: 14px;
-    border-radius: 18px;
-    padding: 14px 16px;
-    background: rgba(255,255,255,0.8);
-    border: 1px solid #fecdd3;
-    outline: none;
-  }
-
-  .admin-card textarea {
-    min-height: 120px;
-    resize: vertical;
-  }
-
-  .admin-card input:focus,
-  .admin-card textarea:focus {
-    border-color: #fb7185;
-    box-shadow: 0 0 0 3px rgba(251, 113, 133, 0.25);
-  }
-
-  .admin-card button {
-    background: linear-gradient(135deg, #f43f5e, #ec4899);
-    color: white;
-    font-weight: 800;
-    padding: 12px 22px;
-    border-radius: 18px;
-    transition: 0.25s;
-  }
-
-  .admin-card button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 25px rgba(244, 63, 94, 0.25);
-  }
+  html { scroll-behavior: smooth; }
+  .menu-btn { display:block; width:100%; text-align:left; background:rgba(255,255,255,.55); border-radius:18px; padding:12px 16px; transition:.25s; }
+  .menu-btn:hover, .active-menu { background:#fecdd3; transform:translateX(4px); }
+  .admin-card { background: rgba(255,255,255,.58); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,.65); border-radius: 28px; padding: 28px; margin-bottom: 26px; box-shadow: 0 18px 45px rgba(244,63,94,.15); }
+  .admin-card h2 { font-size: 24px; font-weight: 800; color: #e11d48; margin-bottom: 18px; }
+  .admin-card input, .admin-card textarea { width: 100%; margin-bottom: 14px; border-radius: 18px; padding: 14px 16px; background: rgba(255,255,255,.8); border: 1px solid #fecdd3; outline: none; }
+  .admin-card textarea { min-height: 120px; resize: vertical; }
+  .admin-card input:focus, .admin-card textarea:focus { border-color:#fb7185; box-shadow:0 0 0 3px rgba(251,113,133,.25); }
+  .admin-card button { background: linear-gradient(135deg,#f43f5e,#ec4899); color:white; font-weight:800; padding:12px 22px; border-radius:18px; transition:.25s; }
+  .admin-card button:hover { transform: translateY(-2px); box-shadow:0 12px 25px rgba(244,63,94,.25); }
+  .admin-title-row { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:18px; }
+  .pager-box { display:flex; align-items:center; gap:10px; }
+  .pager-box span { background:rgba(255,255,255,.75); border:1px solid #fecdd3; padding:10px 16px; border-radius:14px; font-weight:800; color:#be123c; }
+  .admin-grid { display:grid; grid-template-columns: repeat(1,minmax(0,1fr)); gap:16px; }
+  @media (min-width:640px){ .admin-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media (min-width:1024px){ .admin-grid{ grid-template-columns:repeat(5,minmax(0,1fr)); } }
+  .data-card { background:rgba(255,255,255,.72); border:1px solid #fecdd3; border-radius:22px; overflow:hidden; box-shadow:0 10px 24px rgba(244,63,94,.12); min-height:150px; }
+  .data-card-body { padding:14px; }
+  .data-card-title { font-weight:900; color:#e11d48; margin-bottom:8px; word-break:break-word; }
+  .data-card-text { font-size:13px; color:#7f1d1d; opacity:.9; word-break:break-word; }
 </style>
 
 <script type="module" src="admin.js"></script>
