@@ -559,3 +559,69 @@ $("heroVideoNextBtn")?.addEventListener("click", () => {
     renderHeroVideoPage();
   }
 });
+let videoHoverTimer = null;
+
+document.addEventListener("mouseover", (e) => {
+  const video = e.target.closest(".admin-video-preview");
+  if (!video) return;
+
+  clearTimeout(videoHoverTimer);
+
+  videoHoverTimer = setTimeout(() => {
+    openAdminVideoModal(video.dataset.url);
+  }, 1000);
+});
+
+document.addEventListener("mouseout", (e) => {
+  const video = e.target.closest(".admin-video-preview");
+  if (!video) return;
+
+  clearTimeout(videoHoverTimer);
+});
+
+document.addEventListener("click", (e) => {
+  const video = e.target.closest(".admin-video-preview");
+  if (!video) return;
+
+  openAdminVideoModal(video.dataset.url);
+});
+
+function openAdminVideoModal(url) {
+  let modal = document.getElementById("adminVideoModal");
+
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "adminVideoModal";
+    modal.innerHTML = `
+      <div class="admin-video-modal-box">
+        <button id="adminVideoModalClose">×</button>
+        <video id="adminVideoModalPlayer" controls autoplay playsinline></video>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById("adminVideoModalClose").addEventListener("click", closeAdminVideoModal);
+
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeAdminVideoModal();
+    });
+  }
+
+  const player = document.getElementById("adminVideoModalPlayer");
+  player.src = url;
+  modal.classList.add("active");
+}
+
+function closeAdminVideoModal() {
+  const modal = document.getElementById("adminVideoModal");
+  const player = document.getElementById("adminVideoModalPlayer");
+
+  if (player) {
+    player.pause();
+    player.src = "";
+  }
+
+  if (modal) {
+    modal.classList.remove("active");
+  }
+}
