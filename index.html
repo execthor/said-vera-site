@@ -310,29 +310,23 @@ Planlarımız
 </div>
 <div class="relative w-full h-[420px] md:h-[520px] overflow-hidden rounded-3xl border border-black/5 dark:border-white/10 shadow-lg bg-black">
 
-  <!-- Blur arka plan -->
   <video
     id="heroVideoBlur"
     autoplay
     muted
     loop
     playsinline
-    class="absolute inset-0 w-full h-full object-cover blur-2xl scale-125 opacity-60"
+    class="absolute inset-0 w-full h-full object-cover blur-3xl scale-150 opacity-60"
   >
     <source id="heroVideoBlurSource" src="videos/hero_fixed.mp4" type="video/mp4">
   </video>
 
-  <!-- Koyu cam efekt -->
   <div class="absolute inset-0 bg-black/25 z-[1]"></div>
 
-  <!-- Net video -->
   <video
     id="heroVideo"
-    autoplay
-    muted
-    loop
-    playsinline
     controls
+    playsinline
     class="relative z-10 w-full h-full object-contain"
   >
     <source id="heroVideoSource" src="videos/hero_fixed.mp4" type="video/mp4">
