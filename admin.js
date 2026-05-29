@@ -404,19 +404,6 @@ function renderGalleryPage() {
     `${galleryPageCurrent} / ${totalPages}`;
 }
 
-/* =========================================
-   SAYFALAMA
-========================================= */
-
-$("galleryPrevBtn")?.addEventListener("click", () => {
-
-  if (galleryPageCurrent > 1) {
-
-    galleryPageCurrent--;
-
-    renderGalleryPage();
-  }
-});
 
 $("galleryNextBtn")?.addEventListener("click", () => {
 
@@ -438,4 +425,4 @@ $("galleryNextBtn")?.addEventListener("click", () => {
 ========================================= */
 
 loadAdminGallery();
-```
+
