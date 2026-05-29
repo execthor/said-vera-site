@@ -96,7 +96,9 @@ await addDoc(collection(db, "heroVideos"), {
   createdAt: serverTimestamp()
 });
 
-  alert("Video başarıyla yüklendi");
+alert("Video arşive eklendi");
+
+loadAdminHeroVideos();
 });
 
 $("saveStoryBtn")?.addEventListener("click", async () => {
