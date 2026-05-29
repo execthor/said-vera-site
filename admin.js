@@ -24,6 +24,9 @@ const pageSize = 25;
 let galleryItems = [];
 let galleryPageCurrent = 1;
 
+let storyItems = [];
+let storyPageCurrent = 1;
+
 const loginBox = $("loginBox");
 const adminBox = $("adminBox");
 
@@ -320,8 +323,7 @@ document.addEventListener("mouseout", (e) => {
   if (previewImg) previewImg.src = "";
 });
 
-let storyItems = [];
-let storyPageCurrent = 1;
+
 
 async function loadAdminStories() {
   const list = $("storyAdminList");
