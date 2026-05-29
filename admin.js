@@ -576,32 +576,7 @@ $("heroVideoNextBtn")?.addEventListener("click", () => {
     renderHeroVideoPage();
   }
 });
-let videoHoverTimer = null;
 
-document.addEventListener("mouseover", (e) => {
-  const video = e.target.closest(".admin-video-preview");
-  if (!video) return;
-
-  clearTimeout(videoHoverTimer);
-
-  videoHoverTimer = setTimeout(() => {
-    openAdminVideoModal(video.dataset.url);
-  }, 1000);
-});
-
-document.addEventListener("mouseout", (e) => {
-  const video = e.target.closest(".admin-video-preview");
-  if (!video) return;
-
-  clearTimeout(videoHoverTimer);
-});
-
-document.addEventListener("click", (e) => {
-  const video = e.target.closest(".admin-video-preview");
-  if (!video) return;
-
-  openAdminVideoModal(video.dataset.url);
-});
 
 function openAdminVideoModal(url) {
   let modal = document.getElementById("adminVideoModal");
