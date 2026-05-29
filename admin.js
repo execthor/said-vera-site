@@ -45,6 +45,7 @@ onAuthStateChanged(auth, (user) => {
 
   if (user) {
     loadAdminGallery();
+    loadAdminStories();
   }
 });
 
@@ -92,17 +93,15 @@ $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
   alert("Video başarıyla yüklendi");
 });
 
-$("saveStoryBtn")?.addEventListener("click", async () => {
-  await setDoc(
-    doc(db, "siteSettings", "main"),
-    {
-      storyTitle: $("storyTitleInput")?.value || "",
-      storyText: $("storyTextInput")?.value || ""
-    },
-    { merge: true }
-  );
+$$("saveStoryBtn")?.addEventListener("click", async () => {
+  await addDoc(collection(db, "stories"), {
+    storyTitle: $("storyTitleInput")?.value || "",
+    storyText: $("storyTextInput")?.value || "",
+    createdAt: serverTimestamp()
+  });
 
-  alert("Hikaye kaydedildi");
+  alert("Hikaye listeye eklendi");
+  loadAdminStories();
 });
 
 $("uploadPhotoBtn")?.addEventListener("click", async () => {
@@ -321,3 +320,99 @@ document.addEventListener("mouseout", (e) => {
   if (previewImg) previewImg.src = "";
 });
 
+let storyItems = [];
+let storyPageCurrent = 1;
+
+async function loadAdminStories() {
+  const list = $("storyAdminList");
+  if (!list) return;
+
+  const q = query(collection(db, "stories"), orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
+
+  storyItems = [];
+
+  snapshot.forEach((docSnap) => {
+    storyItems.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  renderStoryPage();
+}
+
+function renderStoryPage() {
+  const list = $("storyAdminList");
+  const info = $("storyPageInfo");
+
+  if (!list) return;
+
+  const start = (storyPageCurrent - 1) * pageSize;
+  const end = start + pageSize;
+  const pageItems = storyItems.slice(start, end);
+
+  list.innerHTML = "";
+
+  pageItems.forEach((item) => {
+    list.innerHTML += `
+      <div class="bg-white/70 rounded-3xl shadow-lg border border-rose-100 p-4">
+        <h3 class="font-bold text-rose-600 text-lg mb-2">
+          ${item.storyTitle || "Başlıksız"}
+        </h3>
+
+        <p class="text-sm text-rose-900/80 line-clamp-5 mb-4">
+          ${item.storyText || ""}
+        </p>
+
+        <button
+          class="selectStoryBtn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold"
+          data-id="${item.id}"
+        >
+          Seç / Yayınla
+        </button>
+      </div>
+    `;
+  });
+
+  const totalPages = Math.ceil(storyItems.length / pageSize) || 1;
+
+  if (info) {
+    info.textContent = `${storyPageCurrent} / ${totalPages}`;
+  }
+
+  document.querySelectorAll(".selectStoryBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const selected = storyItems.find((x) => x.id === btn.dataset.id);
+
+      if (!selected) return;
+
+      await setDoc(
+        doc(db, "siteSettings", "main"),
+        {
+          storyTitle: selected.storyTitle || "",
+          storyText: selected.storyText || ""
+        },
+        { merge: true }
+      );
+
+      alert("Bu hikaye ana sitede yayınlandı");
+    });
+  });
+}
+
+$("storyPrevBtn")?.addEventListener("click", () => {
+  if (storyPageCurrent > 1) {
+    storyPageCurrent--;
+    renderStoryPage();
+  }
+});
+
+$("storyNextBtn")?.addEventListener("click", () => {
+  const totalPages = Math.ceil(storyItems.length / pageSize) || 1;
+
+  if (storyPageCurrent < totalPages) {
+    storyPageCurrent++;
+    renderStoryPage();
+  }
+});
