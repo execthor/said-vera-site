@@ -18,25 +18,7 @@ async function loadSettings() {
   const data = snap.data();
 
 
-if (data.heroVideo) {
-
-  const source = document.getElementById("heroVideoSource");
-  const video = document.getElementById("heroVideo");
-
-  if (source && video) {
-
-    // Cache kır
-    source.src = data.heroVideo + "?t=" + Date.now();
-
-    video.load();
-
-    video.muted = true;
-
-    video.play().catch((err) => {
-      console.log("Video autoplay engellendi:", err);
-    });
-  }
-}
+if (data.heroVideo) { const source = document.getElementById("heroVideoSource"); const blurSource = document.getElementById("heroVideoBlurSource"); const video = document.getElementById("heroVideo"); if (source && blurSource && video) { source.src = data.heroVideo; blurSource.src = data.heroVideo; video.load(); video.muted = true; video.play().catch(() => {}); } }
 
 
   if (document.getElementById("storyTitle")) {
