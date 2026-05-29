@@ -320,3 +320,7 @@ function setupAdminGalleryHover() {
     previewImg.src = "";
   });
 }
+$("galleryFirstBtn")?.addEventListener("click", () => {
+  galleryPageCurrent = 1;
+  renderGalleryPage();
+});
