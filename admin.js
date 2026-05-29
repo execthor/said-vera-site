@@ -1,4 +1,3 @@
-```js
 import { auth, db } from "./firebase.js";
 
 import {
@@ -15,169 +14,189 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const loginBox = document.getElementById("loginBox");
-const adminBox = document.getElementById("adminBox");
+const $ = (id) => document.getElementById(id);
 
-document.getElementById("loginBtn").addEventListener("click", async () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+const loginBox = $("loginBox");
+const adminBox = $("adminBox");
 
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-  } catch (error) {
-    alert("Giriş başarısız: " + error.message);
-  }
-});
+const loginBtn = $("loginBtn");
+
+if (loginBtn) {
+  loginBtn.addEventListener("click", async () => {
+    const email = $("email")?.value;
+    const password = $("password")?.value;
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      alert("Giriş başarısız: " + error.message);
+    }
+  });
+}
 
 onAuthStateChanged(auth, (user) => {
-  loginBox.style.display = user ? "none" : "block";
-  adminBox.style.display = user ? "block" : "none";
+  if (loginBox) loginBox.style.display = user ? "none" : "block";
+  if (adminBox) adminBox.style.display = user ? "block" : "none";
 });
 
-document.getElementById("uploadHeroVideoBtn").addEventListener("click", async () => {
+const uploadHeroVideoBtn = $("uploadHeroVideoBtn");
 
-  const file = document.getElementById("heroVideoFile").files[0];
+if (uploadHeroVideoBtn) {
+  uploadHeroVideoBtn.addEventListener("click", async () => {
+    const file = $("heroVideoFile")?.files[0];
 
-  if (!file) {
-    alert("Video seç");
-    return;
-  }
-
-  alert("Video yükleniyor...");
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", "saidvera");
-
-  const response = await fetch(
-    "https://api.cloudinary.com/v1_1/dosgbutzh/video/upload",
-    {
-      method: "POST",
-      body: formData
+    if (!file) {
+      alert("Video seç");
+      return;
     }
-  );
 
-  const data = await response.json();
+    alert("Video yükleniyor...");
 
-  if (!data.secure_url) {
-    console.log(data);
-    alert("Video yüklenemedi");
-    return;
-  }
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "saidvera");
 
-  await setDoc(doc(db, "siteSettings", "main"), {
-    heroVideo: data.secure_url
-  }, { merge: true });
+    const response = await fetch(
+      "https://api.cloudinary.com/v1_1/dosgbutzh/video/upload",
+      {
+        method: "POST",
+        body: formData
+      }
+    );
 
-  alert("Video başarıyla yüklendi");
-});
+    const data = await response.json();
 
-document.getElementById("saveStoryBtn").addEventListener("click", async () => {
-
-  const storyTitle = document.getElementById("storyTitleInput").value;
-  const storyText = document.getElementById("storyTextInput").value;
-
-  await setDoc(doc(db, "siteSettings", "main"), {
-    storyTitle,
-    storyText
-  }, { merge: true });
-
-  alert("Hikaye kaydedildi");
-});
-
-document.getElementById("uploadPhotoBtn").addEventListener("click", async () => {
-
-  const file = document.getElementById("photoFile").files[0];
-  const title = document.getElementById("photoTitle").value;
-
-  if (!file) {
-    alert("Fotoğraf seç");
-    return;
-  }
-
-  const formData = new FormData();
-
-  formData.append("file", file);
-  formData.append("upload_preset", "saidvera");
-
-  const response = await fetch(
-    "https://api.cloudinary.com/v1_1/dosgbutzh/image/upload",
-    {
-      method: "POST",
-      body: formData
+    if (!data.secure_url) {
+      console.log(data);
+      alert("Video yüklenemedi");
+      return;
     }
-  );
 
-  const data = await response.json();
+    await setDoc(doc(db, "siteSettings", "main"), {
+      heroVideo: data.secure_url
+    }, { merge: true });
 
-  await addDoc(collection(db, "gallery"), {
-    title,
-    imageUrl: data.secure_url,
-    createdAt: serverTimestamp()
+    alert("Video başarıyla yüklendi");
   });
+}
 
-  alert("Fotoğraf yüklendi");
-});
+const saveStoryBtn = $("saveStoryBtn");
 
-document.getElementById("addDateBtn").addEventListener("click", async () => {
+if (saveStoryBtn) {
+  saveStoryBtn.addEventListener("click", async () => {
+    await setDoc(doc(db, "siteSettings", "main"), {
+      storyTitle: $("storyTitleInput")?.value || "",
+      storyText: $("storyTextInput")?.value || ""
+    }, { merge: true });
 
-  const title = document.getElementById("dateTitle").value;
-  const date = document.getElementById("dateValue").value;
-  const text = document.getElementById("dateText").value;
-
-  await addDoc(collection(db, "dates"), {
-    title,
-    date,
-    text,
-    createdAt: serverTimestamp()
+    alert("Hikaye kaydedildi");
   });
+}
 
-  alert("Tarih eklendi");
-});
+const uploadPhotoBtn = $("uploadPhotoBtn");
 
-document.getElementById("addPlanBtn").addEventListener("click", async () => {
+if (uploadPhotoBtn) {
+  uploadPhotoBtn.addEventListener("click", async () => {
+    const file = $("photoFile")?.files[0];
+    const title = $("photoTitle")?.value || "";
 
-  const title = document.getElementById("planTitle").value;
-  const text = document.getElementById("planText").value;
+    if (!file) {
+      alert("Fotoğraf seç");
+      return;
+    }
 
-  await addDoc(collection(db, "plans"), {
-    title,
-    text,
-    done: false,
-    createdAt: serverTimestamp()
+    const formData = new FormData();
+
+    formData.append("file", file);
+    formData.append("upload_preset", "saidvera");
+
+    const response = await fetch(
+      "https://api.cloudinary.com/v1_1/dosgbutzh/image/upload",
+      {
+        method: "POST",
+        body: formData
+      }
+    );
+
+    const data = await response.json();
+
+    if (!data.secure_url) {
+      console.log(data);
+      alert("Fotoğraf yüklenemedi");
+      return;
+    }
+
+    await addDoc(collection(db, "gallery"), {
+      title,
+      imageUrl: data.secure_url,
+      createdAt: serverTimestamp()
+    });
+
+    alert("Fotoğraf yüklendi");
   });
+}
 
-  alert("Plan eklendi");
-});
+const addDateBtn = $("addDateBtn");
 
-document.getElementById("addMusicBtn").addEventListener("click", async () => {
+if (addDateBtn) {
+  addDateBtn.addEventListener("click", async () => {
+    await addDoc(collection(db, "dates"), {
+      title: $("dateTitle")?.value || "",
+      date: $("dateValue")?.value || "",
+      text: $("dateText")?.value || "",
+      createdAt: serverTimestamp()
+    });
 
-  const title = document.getElementById("musicTitle").value;
-  const artist = document.getElementById("musicArtist").value;
-  const url = document.getElementById("musicUrl").value;
-
-  await addDoc(collection(db, "musicList"), {
-    title,
-    artist,
-    url,
-    createdAt: serverTimestamp()
+    alert("Tarih eklendi");
   });
+}
 
-  alert("Müzik eklendi");
-});
+const addPlanBtn = $("addPlanBtn");
 
-document.getElementById("saveSecretBtn").addEventListener("click", async () => {
+if (addPlanBtn) {
+  addPlanBtn.addEventListener("click", async () => {
+    await addDoc(collection(db, "plans"), {
+      title: $("planTitle")?.value || "",
+      text: $("planText")?.value || "",
+      done: false,
+      createdAt: serverTimestamp()
+    });
 
-  const secretMessage = document.getElementById("secretMessageInput").value;
+    alert("Plan eklendi");
+  });
+}
 
-  await setDoc(doc(db, "siteSettings", "main"), {
-    secretMessage
-  }, { merge: true });
+const addMusicBtn = $("addMusicBtn");
 
-  alert("Gizli mesaj kaydedildi");
-});
+if (addMusicBtn) {
+  addMusicBtn.addEventListener("click", async () => {
+    await addDoc(collection(db, "musicList"), {
+      title: $("musicTitle")?.value || "",
+      artist: $("musicArtist")?.value || "",
+      url: $("musicUrl")?.value || "",
+      createdAt: serverTimestamp()
+    });
 
-document.getElementById("logoutBtn").addEventListener("click", async () => {
-  await signOut(auth);
-});
-```
+    alert("Müzik eklendi");
+  });
+}
+
+const saveSecretBtn = $("saveSecretBtn");
+
+if (saveSecretBtn) {
+  saveSecretBtn.addEventListener("click", async () => {
+    await setDoc(doc(db, "siteSettings", "main"), {
+      secretMessage: $("secretMessageInput")?.value || ""
+    }, { merge: true });
+
+    alert("Gizli mesaj kaydedildi");
+  });
+}
+
+const logoutBtn = $("logoutBtn");
+
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", async () => {
+    await signOut(auth);
+  });
+}
