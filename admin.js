@@ -281,3 +281,42 @@ $("galleryNextBtn")?.addEventListener("click", () => {
     renderGalleryPage();
   }
 });
+function setupAdminGalleryHover() {
+  const imgs = document.querySelectorAll(".admin-gallery-img");
+
+  let hoverTimer = null;
+  let preview = document.getElementById("adminPhotoPreview");
+
+  if (!preview) {
+    preview = document.createElement("div");
+    preview.id = "adminPhotoPreview";
+    preview.innerHTML = `
+      <div class="admin-photo-preview-box">
+        <img id="adminPhotoPreviewImg" src="">
+      </div>
+    `;
+    document.body.appendChild(preview);
+  }
+
+  const previewImg = document.getElementById("adminPhotoPreviewImg");
+
+  imgs.forEach((img) => {
+    img.addEventListener("mouseenter", () => {
+      hoverTimer = setTimeout(() => {
+        previewImg.src = img.src;
+        preview.classList.add("active");
+      }, 1000);
+    });
+
+    img.addEventListener("mouseleave", () => {
+      clearTimeout(hoverTimer);
+      preview.classList.remove("active");
+      previewImg.src = "";
+    });
+  });
+
+  preview.addEventListener("click", () => {
+    preview.classList.remove("active");
+    previewImg.src = "";
+  });
+}
