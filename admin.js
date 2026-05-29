@@ -472,11 +472,12 @@ function renderHeroVideoPage() {
     list.innerHTML += `
       <div class="bg-white/70 rounded-3xl overflow-hidden shadow-lg border border-rose-100 p-3">
 
-        <video
-          src="${item.videoUrl}"
-          class="w-full h-40 object-cover rounded-2xl mb-3"
-          muted
-        ></video>
+    <video
+  src="${item.videoUrl}"
+  class="admin-video-preview w-full h-40 object-cover rounded-2xl mb-3 cursor-pointer"
+  muted
+  data-url="${item.videoUrl}"
+></video>
 
         <button
           class="selectHeroVideoBtn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold w-full mb-2"
