@@ -483,7 +483,10 @@ function renderHeroVideoPage() {
   pageItems.forEach((item) => {
 
     list.innerHTML += `
-      <div class="bg-white/70 rounded-3xl overflow-hidden shadow-lg border border-rose-100 p-3">
+      <div 
+  class="admin-video-card bg-white/70 rounded-3xl overflow-hidden shadow-lg border border-rose-100 p-3"
+  data-url="${item.videoUrl}"
+>
 
     <video
   src="${item.videoUrl}"
