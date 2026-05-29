@@ -1,3 +1,18 @@
+import { auth, db } from "./firebase.js";
+
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+  collection,
+  addDoc,
+  doc,
+  setDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   signInWithEmailAndPassword,
   signOut,
