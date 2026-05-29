@@ -9,6 +9,18 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+function formatDateTR(dateString) {
+  if (!dateString) return "";
+
+  const date = new Date(dateString);
+
+  return date.toLocaleDateString("tr-TR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+}
+
 async function loadSettings() {
   const ref = doc(db, "siteSettings", "main");
   const snap = await getDoc(ref);
@@ -17,41 +29,40 @@ async function loadSettings() {
 
   const data = snap.data();
 
+  if (data.heroVideo) {
+    const mainSource = document.getElementById("heroVideoSource");
+    const blurSource = document.getElementById("heroVideoBlurSource");
 
+    const mainVideo = document.getElementById("heroVideo");
+    const blurVideo = document.getElementById("heroVideoBlur");
 
-if (data.heroVideo) {
-  const mainSource = document.getElementById("heroVideoSource");
-  const blurSource = document.getElementById("heroVideoBlurSource");
+    if (mainSource && blurSource && mainVideo && blurVideo) {
+      const videoUrl = data.heroVideo + "?t=" + Date.now();
 
-  const mainVideo = document.getElementById("heroVideo");
-  const blurVideo = document.getElementById("heroVideoBlur");
+      mainSource.src = videoUrl;
+      blurSource.src = videoUrl;
 
-  if (mainSource && blurSource && mainVideo && blurVideo) {
-    const videoUrl = data.heroVideo + "?t=" + Date.now();
+      mainVideo.load();
+      blurVideo.load();
 
-    mainSource.src = videoUrl;
-    blurSource.src = videoUrl;
-
-    mainVideo.load();
-    blurVideo.load();
-
-    blurVideo.muted = true;
-    blurVideo.play().catch(() => {});
+      blurVideo.muted = true;
+      blurVideo.play().catch(() => {});
+    }
   }
-}
-
-
 
   if (document.getElementById("storyTitle")) {
-    document.getElementById("storyTitle").textContent = data.storyTitle || "Hikayemiz";
+    document.getElementById("storyTitle").textContent =
+      data.storyTitle || "Hikayemiz";
   }
 
   if (document.getElementById("storyText")) {
-    document.getElementById("storyText").textContent = data.storyText || "";
+    document.getElementById("storyText").textContent =
+      data.storyText || "";
   }
 
   if (document.getElementById("secretMessage")) {
-    document.getElementById("secretMessage").textContent = data.secretMessage || "";
+    document.getElementById("secretMessage").textContent =
+      data.secretMessage || "";
   }
 }
 
@@ -89,10 +100,10 @@ async function loadDates() {
     const item = doc.data();
 
     container.innerHTML += `
-      <div class="date-card">
-        <h3>${item.title}</h3>
-        <strong>${item.date}</strong>
-        <p>${item.text}</p>
+      <div class="date-card-custom">
+        <h3>${formatDateTR(item.date)}</h3>
+        <h4>${item.title || ""}</h4>
+        <p>${item.text || ""}</p>
       </div>
     `;
   });
