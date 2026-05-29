@@ -200,3 +200,9 @@ if (logoutBtn) {
     await signOut(auth);
   });
 }
+const pageSize = 25;
+
+let galleryPage = 1;
+let datesPage = 1;
+let plansPage = 1;
+let musicPage = 1;
