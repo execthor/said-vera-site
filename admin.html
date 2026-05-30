@@ -141,6 +141,18 @@
         </div>
         <input id="planTitle" placeholder="Plan başlığı">
         <textarea id="planText" placeholder="Plan açıklaması"></textarea>
+        <select
+  id="planType"
+  class="w-full p-4 rounded-2xl border border-rose-200 bg-white mb-4"
+>
+  <option value="near">
+    Yakın Planlar
+  </option>
+
+  <option value="dream">
+    Hayal Listesi
+  </option>
+</select>
         <button id="addPlanBtn" class="mb-8">Plan Ekle</button>
         <div id="plansAdminList" class="admin-grid"></div>
       </section>
