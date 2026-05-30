@@ -163,24 +163,35 @@ async function loadMusic() {
   const container = document.getElementById("musicContainer");
   if (!container) return;
 
-  const q = query(collection(db, "musicList"), orderBy("createdAt", "desc"));
-  const snapshot = await getDocs(q);
+  const ref = doc(db, "siteSettings", "main");
+  const snap = await getDoc(ref);
 
-  container.innerHTML = "";
+  if (!snap.exists()) return;
 
-  snapshot.forEach((doc) => {
-    const item = doc.data();
+  const data = snap.data();
 
-    container.innerHTML += `
-      <div class="music-card">
-        <h3>${item.title}</h3>
-        <p>${item.artist}</p>
-        <a href="${item.url}" target="_blank">Dinle</a>
-      </div>
-    `;
-  });
+  if (!data.spotifyPlaylistUrl) {
+    container.innerHTML = "<p>Spotify playlist linki eklenmedi.</p>";
+    return;
+  }
+
+  const embedUrl = data.spotifyPlaylistUrl
+    .replace("open.spotify.com/playlist/", "open.spotify.com/embed/playlist/")
+    .split("?")[0];
+
+  container.innerHTML = `
+    <iframe
+      style="border-radius:18px"
+      src="${embedUrl}?utm_source=generator&theme=0"
+      width="100%"
+      height="650"
+      frameborder="0"
+      allowfullscreen=""
+      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+      loading="lazy">
+    </iframe>
+  `;
 }
-
 loadSettings();
 loadGallery();
 loadDates();
