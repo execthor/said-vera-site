@@ -34,6 +34,9 @@ let heroVideoPageCurrent = 1;
 let dateItems = [];
 let datePageCurrent = 1;
 
+let secretItems = [];
+let secretPageCurrent = 1;
+
 const loginBox = $("loginBox");
 const adminBox = $("adminBox");
 
@@ -59,6 +62,7 @@ onAuthStateChanged(auth, (user) => {
     loadAdminStories();
     loadAdminHeroVideos();
     loadAdminDates();
+    loadAdminSecrets();
   }
 });
 
@@ -209,13 +213,13 @@ $("saveSpotifyPlaylistBtn")?.addEventListener("click", async () => {
 
 /* GİZLİ MESAJ */
 $("saveSecretBtn")?.addEventListener("click", async () => {
-  await setDoc(
-    doc(db, "siteSettings", "main"),
-    { secretMessage: $("secretMessageInput")?.value || "" },
-    { merge: true }
-  );
+  await addDoc(collection(db, "secretMessages"), {
+    secretMessage: $("secretMessageInput")?.value || "",
+    createdAt: serverTimestamp()
+  });
 
-  alert("Gizli mesaj kaydedildi");
+  alert("Gizli mesaj listeye eklendi");
+  loadAdminSecrets();
 });
 
 /* ÇIKIŞ */
@@ -750,5 +754,105 @@ $("datesNextBtn")?.addEventListener("click", () => {
   if (datePageCurrent < totalPages) {
     datePageCurrent++;
     renderDatePage();
+  }
+});
+async function loadAdminSecrets() {
+  const list = $("secretAdminList");
+  if (!list) return;
+
+  const q = query(collection(db, "secretMessages"), orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
+
+  secretItems = [];
+
+  snapshot.forEach((docSnap) => {
+    secretItems.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  renderSecretPage();
+}
+
+function renderSecretPage() {
+  const list = $("secretAdminList");
+  const info = $("secretPageInfo");
+
+  if (!list) return;
+
+  const start = (secretPageCurrent - 1) * pageSize;
+  const end = start + pageSize;
+  const pageItems = secretItems.slice(start, end);
+
+  list.innerHTML = "";
+
+  pageItems.forEach((item) => {
+    list.innerHTML += `
+      <div class="bg-white/70 rounded-3xl shadow-lg border border-rose-100 p-4">
+        <p class="text-sm text-rose-900/80 line-clamp-6 mb-4">
+          ${item.secretMessage || ""}
+        </p>
+
+        <button
+          class="publishSecretBtn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold w-full mb-2"
+          data-id="${item.id}"
+        >
+          Yayımla
+        </button>
+
+        <button
+          class="deleteSecretBtn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold w-full"
+          data-id="${item.id}"
+        >
+          Sil
+        </button>
+      </div>
+    `;
+  });
+
+  const totalPages = Math.ceil(secretItems.length / pageSize) || 1;
+  if (info) info.textContent = `${secretPageCurrent} / ${totalPages}`;
+
+  document.querySelectorAll(".publishSecretBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const selected = secretItems.find((x) => x.id === btn.dataset.id);
+      if (!selected) return;
+
+      await setDoc(
+        doc(db, "siteSettings", "main"),
+        { secretMessage: selected.secretMessage || "" },
+        { merge: true }
+      );
+
+      alert("Gizli mesaj yayımlandı");
+    });
+  });
+
+  document.querySelectorAll(".deleteSecretBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Bu gizli mesaj silinsin mi?")) return;
+
+      await deleteDoc(doc(db, "secretMessages", btn.dataset.id));
+
+      alert("Gizli mesaj silindi");
+      loadAdminSecrets();
+    });
+  });
+}
+
+$("secretPrevBtn")?.addEventListener("click", () => {
+  if (secretPageCurrent > 1) {
+    secretPageCurrent--;
+    renderSecretPage();
+  }
+});
+
+$("secretNextBtn")?.addEventListener("click", () => {
+  const totalPages = Math.ceil(secretItems.length / pageSize) || 1;
+
+  if (secretPageCurrent < totalPages) {
+    secretPageCurrent++;
+    renderSecretPage();
   }
 });
