@@ -116,15 +116,44 @@ async function loadPlans() {
   const q = query(collection(db, "plans"), orderBy("createdAt", "desc"));
   const snapshot = await getDocs(q);
 
-  container.innerHTML = "";
+  const plans = [];
 
   snapshot.forEach((doc) => {
-    const item = doc.data();
+    plans.push(doc.data());
+  });
 
-    container.innerHTML += `
-      <div class="plan-card">
-        <h3>${item.title}</h3>
-        <p>${item.text}</p>
+  const nearPlans = plans.filter((x) => x.type !== "dream");
+  const dreamPlans = plans.filter((x) => x.type === "dream");
+
+  container.innerHTML = `
+    <div class="plans-box-custom">
+      <h3>Yakın Planlar</h3>
+      <div class="plans-list-custom" id="nearPlansList"></div>
+    </div>
+
+    <div class="plans-box-custom">
+      <h3>Hayal Listesi</h3>
+      <div class="plans-list-custom" id="dreamPlansList"></div>
+    </div>
+  `;
+
+  const nearList = document.getElementById("nearPlansList");
+  const dreamList = document.getElementById("dreamPlansList");
+
+  nearPlans.forEach((item) => {
+    nearList.innerHTML += `
+      <div class="plan-item-custom">
+        <span>✓</span>
+        <p>${item.title || item.text || ""}</p>
+      </div>
+    `;
+  });
+
+  dreamPlans.forEach((item) => {
+    dreamList.innerHTML += `
+      <div class="plan-item-custom">
+        <span>☆</span>
+        <p>${item.title || item.text || ""}</p>
       </div>
     `;
   });
