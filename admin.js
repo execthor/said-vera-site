@@ -1,3 +1,4 @@
+```js
 import { auth, db } from "./firebase.js";
 
 import {
@@ -54,10 +55,10 @@ onAuthStateChanged(auth, (user) => {
   if (adminBox) adminBox.style.display = user ? "block" : "none";
 
   if (user) {
-  loadAdminGallery();
-  loadAdminStories();
-  loadAdminHeroVideos();
-  loadAdminDates();
+    loadAdminGallery();
+    loadAdminStories();
+    loadAdminHeroVideos();
+    loadAdminDates();
   }
 });
 
@@ -170,19 +171,23 @@ $("addDateBtn")?.addEventListener("click", async () => {
   });
 
   alert("Tarih eklendi");
-
   loadAdminDates();
 });
 
 /* PLAN EKLE */
-await addDoc(collection(db, "plans"), {
-  title: $("planTitle")?.value || "",
-  text: $("planText")?.value || "",
-  type: $("planType")?.value || "near",
-  done: false,
-  createdAt: serverTimestamp()
+$("addPlanBtn")?.addEventListener("click", async () => {
+  await addDoc(collection(db, "plans"), {
+    title: $("planTitle")?.value || "",
+    text: $("planText")?.value || "",
+    type: $("planType")?.value || "near",
+    done: false,
+    createdAt: serverTimestamp()
+  });
+
+  alert("Plan eklendi");
 });
-/* MÜZİK EKLE */
+
+/* SPOTIFY PLAYLIST */
 $("saveSpotifyPlaylistBtn")?.addEventListener("click", async () => {
   const url = $("spotifyPlaylistUrl")?.value || "";
 
@@ -201,6 +206,7 @@ $("saveSpotifyPlaylistBtn")?.addEventListener("click", async () => {
 
   alert("Spotify playlist linki kaydedildi");
 });
+
 /* GİZLİ MESAJ */
 $("saveSecretBtn")?.addEventListener("click", async () => {
   await setDoc(
@@ -311,7 +317,12 @@ $("galleryNextBtn")?.addEventListener("click", () => {
 let adminHoverTimer = null;
 
 document.addEventListener("mouseover", (e) => {
-  const img = e.target.closest(".admin-gallery-img");
+  const target = e.target;
+
+  if (!(target instanceof Element)) return;
+
+  const img = target.closest(".admin-gallery-img");
+
   if (!img) return;
 
   clearTimeout(adminHoverTimer);
@@ -335,45 +346,13 @@ document.addEventListener("mouseover", (e) => {
   }, 1000);
 });
 
-document.addEventListener("mouseenter", (e) => {
-
-  const img = e.target.closest(".admin-gallery-img");
-
-  if (!img) return;
-
-  clearTimeout(adminHoverTimer);
-
-  adminHoverTimer = setTimeout(() => {
-
-    let preview =
-      document.getElementById("adminPhotoPreview");
-
-    if (!preview) {
-
-      preview = document.createElement("div");
-
-      preview.id = "adminPhotoPreview";
-
-      preview.innerHTML = `
-        <div class="admin-photo-preview-box">
-          <img id="adminPhotoPreviewImg" src="">
-        </div>
-      `;
-
-      document.body.appendChild(preview);
-    }
-
-    document
-      .getElementById("adminPhotoPreviewImg")
-      .src = img.src;
-
-    preview.classList.add("active");
-
-  }, 1000);
-
-}, true);
 document.addEventListener("mouseout", (e) => {
-  const img = e.target.closest(".admin-gallery-img");
+  const target = e.target;
+
+  if (!(target instanceof Element)) return;
+
+  const img = target.closest(".admin-gallery-img");
+
   if (!img) return;
 
   clearTimeout(adminHoverTimer);
@@ -585,7 +564,12 @@ $("heroVideoNextBtn")?.addEventListener("click", () => {
 let videoHoverTimer = null;
 
 document.addEventListener("mouseenter", (e) => {
-  const card = e.target.closest(".admin-video-card");
+  const target = e.target;
+
+  if (!(target instanceof Element)) return;
+
+  const card = target.closest(".admin-video-card");
+
   if (!card) return;
 
   clearTimeout(videoHoverTimer);
@@ -601,7 +585,12 @@ document.addEventListener("mouseenter", (e) => {
 }, true);
 
 document.addEventListener("mouseleave", (e) => {
-  const card = e.target.closest(".admin-video-card");
+  const target = e.target;
+
+  if (!(target instanceof Element)) return;
+
+  const card = target.closest(".admin-video-card");
+
   if (!card) return;
 
   clearTimeout(videoHoverTimer);
@@ -614,9 +603,14 @@ document.addEventListener("mouseleave", (e) => {
 }, true);
 
 document.addEventListener("click", (e) => {
-  if (e.target.closest("button")) return;
+  const target = e.target;
 
-  const card = e.target.closest(".admin-video-card");
+  if (!(target instanceof Element)) return;
+
+  if (target.closest("button")) return;
+
+  const card = target.closest(".admin-video-card");
+
   if (!card) return;
 
   openAdminVideoModal(card.dataset.url);
@@ -663,6 +657,8 @@ function closeAdminVideoModal() {
     modal.classList.remove("active");
   }
 }
+
+/* ÖNEMLİ TARİHLER */
 function formatDateTRAdmin(dateString) {
   if (!dateString) return "";
 
@@ -736,7 +732,6 @@ function renderDatePage() {
       await deleteDoc(doc(db, "dates", btn.dataset.id));
 
       alert("Tarih silindi");
-
       loadAdminDates();
     });
   });
@@ -757,3 +752,4 @@ $("datesNextBtn")?.addEventListener("click", () => {
     renderDatePage();
   }
 });
+```
