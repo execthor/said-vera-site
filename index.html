@@ -558,11 +558,14 @@ Planlarımız
       const secretMessage = document.getElementById('secretMessage');
       if (secretBtn && secretPass && secretMessage) {
         secretBtn.addEventListener('click', () => {
-          if (secretPass.value.trim().toLocaleLowerCase('tr-TR') === 'afyon') {
-            secretMessage.classList.remove('hidden');
-          } else {
-            alert('Yanlış şifre!');
-          }
+       if (secretPass.value.trim().toLocaleLowerCase('tr-TR') === 'afyon') {
+  secretMessage.textContent = window.savedSecretMessage || "Gizli mesaj bulunamadı.";
+  secretMessage.classList.remove('hidden');
+} else {
+  secretMessage.textContent = "";
+  secretMessage.classList.add('hidden');
+  alert('Yanlış şifre!');
+}
         });
       }
 
