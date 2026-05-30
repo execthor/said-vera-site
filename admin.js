@@ -183,17 +183,24 @@ await addDoc(collection(db, "plans"), {
   createdAt: serverTimestamp()
 });
 /* MÜZİK EKLE */
-$("addMusicBtn")?.addEventListener("click", async () => {
-  await addDoc(collection(db, "musicList"), {
-    title: $("musicTitle")?.value || "",
-    artist: $("musicArtist")?.value || "",
-    url: $("musicUrl")?.value || "",
-    createdAt: serverTimestamp()
-  });
+$("saveSpotifyPlaylistBtn")?.addEventListener("click", async () => {
+  const url = $("spotifyPlaylistUrl")?.value || "";
 
-  alert("Müzik eklendi");
+  if (!url.includes("open.spotify.com/playlist/")) {
+    alert("Geçerli Spotify playlist linki gir");
+    return;
+  }
+
+  await setDoc(
+    doc(db, "siteSettings", "main"),
+    {
+      spotifyPlaylistUrl: url
+    },
+    { merge: true }
+  );
+
+  alert("Spotify playlist linki kaydedildi");
 });
-
 /* GİZLİ MESAJ */
 $("saveSecretBtn")?.addEventListener("click", async () => {
   await setDoc(
