@@ -856,3 +856,15 @@ $("secretNextBtn")?.addEventListener("click", () => {
     renderSecretPage();
   }
 });
+$("saveContactBtn")?.addEventListener("click", async () => {
+  await setDoc(
+    doc(db, "siteSettings", "main"),
+    {
+      saidInstagram: $("saidInstagramInput")?.value || "",
+      veraInstagram: $("veraInstagramInput")?.value || ""
+    },
+    { merge: true }
+  );
+
+  alert("İletişim bilgileri kaydedildi");
+});
