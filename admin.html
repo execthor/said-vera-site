@@ -171,10 +171,26 @@
 </section>
 
       <section id="secretPage" class="admin-page admin-card hidden">
-        <h2>💌 Gizli Mesaj</h2>
-        <textarea id="secretMessageInput" placeholder="Gizli mesaj"></textarea>
-        <button id="saveSecretBtn">Gizli Mesajı Kaydet</button>
-      </section>
+  <h2>💌 Gizli Mesaj</h2>
+
+  <textarea id="secretMessageInput" placeholder="Gizli mesaj"></textarea>
+
+  <button id="saveSecretBtn">
+    Gizli Mesajı Listeye Ekle
+  </button>
+
+  <div class="flex items-center justify-between mt-8 mb-4">
+    <h3 class="text-xl font-bold text-rose-600">Kayıtlı Gizli Mesajlar</h3>
+
+    <div class="flex gap-3 items-center">
+      <button id="secretPrevBtn">◀</button>
+      <span id="secretPageInfo" class="px-4 py-2 bg-white rounded-xl">1 / 1</span>
+      <button id="secretNextBtn">▶</button>
+    </div>
+  </div>
+
+  <div id="secretAdminList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4"></div>
+</section>
     
     </div>
   </main>
