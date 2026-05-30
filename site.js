@@ -60,10 +60,14 @@ async function loadSettings() {
       data.storyText || "";
   }
 
-  if (document.getElementById("secretMessage")) {
-    document.getElementById("secretMessage").textContent =
-      data.secretMessage || "";
-  }
+window.savedSecretMessage = data.secretMessage || "";
+
+const secretMessageBox = document.getElementById("secretMessage");
+
+if (secretMessageBox) {
+  secretMessageBox.textContent = "";
+  secretMessageBox.classList.add("hidden");
+}
 }
 
 async function loadGallery() {
