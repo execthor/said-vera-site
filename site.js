@@ -68,6 +68,17 @@ if (secretMessageBox) {
   secretMessageBox.textContent = "";
   secretMessageBox.classList.add("hidden");
 }
+
+  const saidInstagramLink = document.getElementById("saidInstagramLink");
+const veraInstagramLink = document.getElementById("veraInstagramLink");
+
+if (saidInstagramLink && data.saidInstagram) {
+  saidInstagramLink.href = data.saidInstagram;
+}
+
+if (veraInstagramLink && data.veraInstagram) {
+  veraInstagramLink.href = data.veraInstagram;
+}
 }
 
 async function loadGallery() {
