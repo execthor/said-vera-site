@@ -19,6 +19,59 @@
   </script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
+    #plansContainer {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 32px;
+}
+
+@media (min-width: 768px) {
+  #plansContainer {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.plans-box-custom {
+  background: linear-gradient(135deg, #4c1024, #7f1237);
+  border-radius: 22px;
+  padding: 26px;
+  color: white;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.28);
+}
+
+.plans-box-custom h3 {
+  font-size: 20px;
+  font-weight: 900;
+  margin-bottom: 18px;
+}
+
+.plans-list-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plan-item-custom {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  padding: 18px 20px;
+}
+
+.plan-item-custom span {
+  color: #fb7185;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.plan-item-custom p {
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.92);
+}
     .glass { background: rgba(255,255,255,.70); backdrop-filter: saturate(140%) blur(8px); }
     .dark .glass { background: rgba(255,255,255,.06); }
 
