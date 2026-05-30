@@ -175,17 +175,13 @@ $("addDateBtn")?.addEventListener("click", async () => {
 });
 
 /* PLAN EKLE */
-$("addPlanBtn")?.addEventListener("click", async () => {
-  await addDoc(collection(db, "plans"), {
-    title: $("planTitle")?.value || "",
-    text: $("planText")?.value || "",
-    done: false,
-    createdAt: serverTimestamp()
-  });
-
-  alert("Plan eklendi");
+await addDoc(collection(db, "plans"), {
+  title: $("planTitle")?.value || "",
+  text: $("planText")?.value || "",
+  type: $("planType")?.value || "near",
+  done: false,
+  createdAt: serverTimestamp()
 });
-
 /* MÜZİK EKLE */
 $("addMusicBtn")?.addEventListener("click", async () => {
   await addDoc(collection(db, "musicList"), {
