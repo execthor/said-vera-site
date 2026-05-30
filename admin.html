@@ -22,6 +22,12 @@
       <button data-page="musicPage" class="menu-btn">🎵 Müzik Listesi</button>
       <button data-page="secretPage" class="menu-btn">💌 Gizli Mesaj</button>
       <button data-page="contactPage" class="menu-btn">📱 İletişim</button>
+      <button
+  data-page="contactPage"
+  class="menu-btn"
+>
+  📱 İletişim
+</button>
     </nav>
   </aside>
 
@@ -203,6 +209,55 @@
   </button>
 </section>
     </div>
+    <section id="contactPage" class="admin-page admin-card hidden">
+
+  <h2 class="text-3xl font-black mb-6 text-rose-600">
+    📱 İletişim Ayarları
+  </h2>
+
+  <div class="grid gap-4">
+
+    <input id="instagramInput"
+      class="w-full p-4 rounded-2xl border border-rose-200"
+      placeholder="Instagram linki">
+
+    <input id="telegramInput"
+      class="w-full p-4 rounded-2xl border border-rose-200"
+      placeholder="Telegram linki">
+
+    <input id="mailInput"
+      class="w-full p-4 rounded-2xl border border-rose-200"
+      placeholder="Mail adresi">
+
+    <input id="phoneInput"
+      class="w-full p-4 rounded-2xl border border-rose-200"
+      placeholder="Telefon numarası">
+
+    <input id="spotifyInput"
+      class="w-full p-4 rounded-2xl border border-rose-200"
+      placeholder="Spotify linki">
+
+    <button id="saveContactBtn"
+      class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-6 py-4 rounded-2xl">
+      Kaydet
+    </button>
+
+  </div>
+
+  <div class="mt-10">
+
+    <h3 class="text-2xl font-black text-rose-600 mb-4">
+      Kayıtlı İletişim Bilgileri
+    </h3>
+
+    <div
+      id="contactList"
+      class="grid grid-cols-1 md:grid-cols-2 gap-4"
+    ></div>
+
+  </div>
+
+</section>
   </main>
 </div>
 
