@@ -60,14 +60,8 @@ onAuthStateChanged(auth, (user) => {
   if (loginBox) loginBox.style.display = user ? "none" : "block";
   if (adminBox) adminBox.style.display = user ? "block" : "none";
 
-  if (user) {
-    loadAdminGallery();
-    loadAdminStories();
-    loadAdminHeroVideos();
-    loadAdminDates();
-    loadAdminSecrets();
-    loadAdminSecretQuestions();
-  }
+  // Admin panelde kayıt listeleri gösterilmeyecek.
+  // Bu yüzden girişte eski kayıtları otomatik listelemiyoruz.
 });
 
 /* SAYFA GEÇİŞ */
@@ -113,25 +107,28 @@ $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
     return alert("Video yüklenemedi");
   }
 
-  await addDoc(collection(db, "heroVideos"), {
-    videoUrl: data.secure_url,
-    createdAt: serverTimestamp()
-  });
+  await setDoc(
+    doc(db, "siteSettings", "main"),
+    { heroVideo: data.secure_url },
+    { merge: true }
+  );
 
-  alert("Video arşive eklendi");
-  loadAdminHeroVideos();
+  alert("Video ana siteye kaydedildi");
+  if ($("heroVideoFile")) $("heroVideoFile").value = "";
 });
 
 /* HİKAYE EKLE */
 $("saveStoryBtn")?.addEventListener("click", async () => {
-  await addDoc(collection(db, "stories"), {
-    storyTitle: $("storyTitleInput")?.value || "",
-    storyText: $("storyTextInput")?.value || "",
-    createdAt: serverTimestamp()
-  });
+  await setDoc(
+    doc(db, "siteSettings", "main"),
+    {
+      storyTitle: $("storyTitleInput")?.value || "",
+      storyText: $("storyTextInput")?.value || ""
+    },
+    { merge: true }
+  );
 
-  alert("Hikaye listeye eklendi");
-  loadAdminStories();
+  alert("Hikaye ana siteye kaydedildi");
 });
 
 /* FOTOĞRAF YÜKLE */
@@ -166,7 +163,8 @@ $("uploadPhotoBtn")?.addEventListener("click", async () => {
   });
 
   alert("Fotoğraf yüklendi");
-  loadAdminGallery();
+  if ($("photoFile")) $("photoFile").value = "";
+  if ($("photoTitle")) $("photoTitle").value = "";
 });
 
 /* TARİH EKLE */
@@ -179,7 +177,9 @@ $("addDateBtn")?.addEventListener("click", async () => {
   });
 
   alert("Tarih eklendi");
-  loadAdminDates();
+  if ($("dateTitle")) $("dateTitle").value = "";
+  if ($("dateValue")) $("dateValue").value = "";
+  if ($("dateText")) $("dateText").value = "";
 });
 
 /* PLAN EKLE */
@@ -193,6 +193,8 @@ $("addPlanBtn")?.addEventListener("click", async () => {
   });
 
   alert("Plan eklendi");
+  if ($("planTitle")) $("planTitle").value = "";
+  if ($("planText")) $("planText").value = "";
 });
 
 /* SPOTIFY PLAYLIST */
@@ -217,13 +219,13 @@ $("saveSpotifyPlaylistBtn")?.addEventListener("click", async () => {
 
 /* GİZLİ MESAJ */
 $("saveSecretBtn")?.addEventListener("click", async () => {
-  await addDoc(collection(db, "secretMessages"), {
-    secretMessage: $("secretMessageInput")?.value || "",
-    createdAt: serverTimestamp()
-  });
+  await setDoc(
+    doc(db, "siteSettings", "main"),
+    { secretMessage: $("secretMessageInput")?.value || "" },
+    { merge: true }
+  );
 
-  alert("Gizli mesaj listeye eklendi");
-  loadAdminSecrets();
+  alert("Gizli mesaj ana siteye kaydedildi");
 });
 
 
@@ -237,14 +239,16 @@ $("saveSecretQuestionBtn")?.addEventListener("click", async () => {
     return;
   }
 
-  await addDoc(collection(db, "secretQuestions"), {
-    secretQuestion: question,
-    secretAnswer: answer.toLocaleLowerCase("tr-TR"),
-    createdAt: serverTimestamp()
-  });
+  await setDoc(
+    doc(db, "siteSettings", "main"),
+    {
+      secretQuestion: question,
+      secretAnswer: answer.toLocaleLowerCase("tr-TR")
+    },
+    { merge: true }
+  );
 
-  alert("Soru ve cevap listeye eklendi");
-  loadAdminSecretQuestions();
+  alert("Soru ve cevap ana siteye kaydedildi");
 });
 
 /* ÇIKIŞ */
