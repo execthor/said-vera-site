@@ -39,16 +39,50 @@ async function fileToHash(file) {
     .join("");
 }
 
-async function isDuplicateFile(collectionName, fileHash) {
+window.fileToHash = fileToHash;
+
+async function isDuplicateFile(collectionName, file) {
+  const fileHash = await fileToHash(file);
+  const fileName = normalizeText(file.name);
+  const fileSize = file.size;
+
   const snapshot = await getDocs(collection(db, collectionName));
 
-  return snapshot.docs.some((docSnap) => {
-    return docSnap.data().fileHash === fileHash;
+  const exists = snapshot.docs.some((docSnap) => {
+    const data = docSnap.data();
+
+    const sameHash = data.fileHash && data.fileHash === fileHash;
+
+    const sameNameAndSize =
+      data.fileName &&
+      normalizeText(data.fileName) === fileName &&
+      Number(data.fileSize || 0) === Number(fileSize);
+
+    return sameHash || sameNameAndSize;
   });
+
+  return {
+    exists,
+    fileHash,
+    fileName: file.name,
+    fileSize
+  };
 }
 
 async function isDuplicateRecord(collectionName, fields) {
   const snapshot = await getDocs(collection(db, collectionName));
+
+  return snapshot.docs.some((docSnap) => {
+    const data = docSnap.data();
+
+    return Object.keys(fields).every((key) => {
+      return normalizeText(data[key]) === normalizeText(fields[key]);
+    });
+  });
+}
+
+async function isDuplicateSetting(fields) {
+  const snapshot = await getDocs(collection(db, "siteSettings"));
 
   return snapshot.docs.some((docSnap) => {
     const data = docSnap.data();
@@ -80,6 +114,15 @@ let secretQuestionPageCurrent = 1;
 
 const loginBox = $("loginBox");
 const adminBox = $("adminBox");
+
+let isVideoUploading = false;
+let isPhotoUploading = false;
+let isSavingStory = false;
+let isSavingDate = false;
+let isSavingPlan = false;
+let isSavingSpotify = false;
+let isSavingSecret = false;
+let isSavingSecretQuestion = false;
 
 /* LOGIN */
 $("loginBtn")?.addEventListener("click", async () => {
@@ -129,170 +172,281 @@ document.querySelectorAll("[data-page]").forEach((btn) => {
 
 /* VİDEO YÜKLE */
 $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
+  if (isVideoUploading) return;
+
+  const btn = $("uploadHeroVideoBtn");
   const file = $("heroVideoFile")?.files[0];
 
   if (!file) return alert("Video seç");
 
-  const fileHash = await fileToHash(file);
+  try {
+    isVideoUploading = true;
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Kontrol ediliyor...";
+    }
 
-  if (await isDuplicateFile("heroVideos", fileHash)) {
-    alert("Bu video zaten eklenmiş");
-    return;
+    const duplicate = await isDuplicateFile("heroVideos", file);
+
+    if (duplicate.exists) {
+      alert("Bu video zaten eklenmiş");
+      return;
+    }
+
+    if (btn) btn.textContent = "Video yükleniyor...";
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "saidvera_video");
+
+    const response = await fetch(
+      "https://api.cloudinary.com/v1_1/dosgbutzh/video/upload",
+      { method: "POST", body: formData }
+    );
+
+    const data = await response.json();
+
+    if (!data.secure_url) {
+      console.log(data);
+      alert("Video yüklenemedi");
+      return;
+    }
+
+    const duplicateAgain = await isDuplicateFile("heroVideos", file);
+
+    if (duplicateAgain.exists) {
+      alert("Bu video zaten eklenmiş");
+      return;
+    }
+
+    await addDoc(collection(db, "heroVideos"), {
+      videoUrl: data.secure_url,
+      fileHash: duplicate.fileHash,
+      fileName: duplicate.fileName,
+      fileSize: duplicate.fileSize,
+      createdAt: serverTimestamp()
+    });
+
+    if ($("heroVideoFile")) $("heroVideoFile").value = "";
+
+    alert("Video arşive eklendi");
+    loadAdminHeroVideos();
+  } catch (error) {
+    console.error(error);
+    alert("Video yükleme hatası: " + error.message);
+  } finally {
+    isVideoUploading = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Video Yükle";
+    }
   }
-
-  alert("Video yükleniyor...");
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", "saidvera_video");
-
-  const response = await fetch(
-    "https://api.cloudinary.com/v1_1/dosgbutzh/video/upload",
-    { method: "POST", body: formData }
-  );
-
-  const data = await response.json();
-
-  if (!data.secure_url) {
-    console.log(data);
-    return alert("Video yüklenemedi");
-  }
-
-  await addDoc(collection(db, "heroVideos"), {
-    videoUrl: data.secure_url,
-    fileHash,
-    createdAt: serverTimestamp()
-  });
-
-  if ($("heroVideoFile")) $("heroVideoFile").value = "";
-
-  alert("Video arşive eklendi");
-  loadAdminHeroVideos();
 });
 
 /* HİKAYE EKLE */
 $("saveStoryBtn")?.addEventListener("click", async () => {
+  if (isSavingStory) return;
+
+  const btn = $("saveStoryBtn");
   const storyTitle = $("storyTitleInput")?.value || "";
   const storyText = $("storyTextInput")?.value || "";
 
-  if (await isDuplicateRecord("stories", { storyTitle, storyText })) {
-    alert("Bu hikaye zaten eklenmiş");
+  if (!normalizeText(storyTitle) && !normalizeText(storyText)) {
+    alert("Hikaye başlığı veya metni boş olamaz");
     return;
   }
 
-  await addDoc(collection(db, "stories"), {
-    storyTitle,
-    storyText,
-    createdAt: serverTimestamp()
-  });
+  try {
+    isSavingStory = true;
+    if (btn) btn.disabled = true;
 
-  if ($("storyTitleInput")) $("storyTitleInput").value = "";
-  if ($("storyTextInput")) $("storyTextInput").value = "";
+    if (await isDuplicateRecord("stories", { storyTitle, storyText })) {
+      alert("Bu hikaye zaten eklenmiş");
+      return;
+    }
 
-  alert("Hikaye listeye eklendi");
-  loadAdminStories();
+    await addDoc(collection(db, "stories"), {
+      storyTitle,
+      storyText,
+      createdAt: serverTimestamp()
+    });
+
+    if ($("storyTitleInput")) $("storyTitleInput").value = "";
+    if ($("storyTextInput")) $("storyTextInput").value = "";
+
+    alert("Hikaye listeye eklendi");
+    loadAdminStories();
+  } finally {
+    isSavingStory = false;
+    if (btn) btn.disabled = false;
+  }
 });
 
 /* FOTOĞRAF YÜKLE */
 $("uploadPhotoBtn")?.addEventListener("click", async () => {
+  if (isPhotoUploading) return;
+
+  const btn = $("uploadPhotoBtn");
   const file = $("photoFile")?.files[0];
   const title = $("photoTitle")?.value || "";
 
   if (!file) return alert("Fotoğraf seç");
 
-  const fileHash = await fileToHash(file);
+  try {
+    isPhotoUploading = true;
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Kontrol ediliyor...";
+    }
 
-  if (await isDuplicateFile("gallery", fileHash)) {
-    alert("Bu fotoğraf zaten eklenmiş");
-    return;
+    const duplicate = await isDuplicateFile("gallery", file);
+
+    if (duplicate.exists) {
+      alert("Bu fotoğraf zaten eklenmiş");
+      return;
+    }
+
+    if (btn) btn.textContent = "Fotoğraf yükleniyor...";
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "saidvera");
+
+    const response = await fetch(
+      "https://api.cloudinary.com/v1_1/dosgbutzh/image/upload",
+      { method: "POST", body: formData }
+    );
+
+    const data = await response.json();
+
+    if (!data.secure_url) {
+      console.log(data);
+      alert("Fotoğraf yüklenemedi");
+      return;
+    }
+
+    const duplicateAgain = await isDuplicateFile("gallery", file);
+
+    if (duplicateAgain.exists) {
+      alert("Bu fotoğraf zaten eklenmiş");
+      return;
+    }
+
+    await addDoc(collection(db, "gallery"), {
+      title,
+      imageUrl: data.secure_url,
+      fileHash: duplicate.fileHash,
+      fileName: duplicate.fileName,
+      fileSize: duplicate.fileSize,
+      createdAt: serverTimestamp()
+    });
+
+    if ($("photoFile")) $("photoFile").value = "";
+    if ($("photoTitle")) $("photoTitle").value = "";
+
+    alert("Fotoğraf yüklendi");
+    loadAdminGallery();
+  } catch (error) {
+    console.error(error);
+    alert("Fotoğraf yükleme hatası: " + error.message);
+  } finally {
+    isPhotoUploading = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Fotoğraf Yükle";
+    }
   }
-
-  alert("Fotoğraf yükleniyor...");
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", "saidvera");
-
-  const response = await fetch(
-    "https://api.cloudinary.com/v1_1/dosgbutzh/image/upload",
-    { method: "POST", body: formData }
-  );
-
-  const data = await response.json();
-
-  if (!data.secure_url) {
-    console.log(data);
-    return alert("Fotoğraf yüklenemedi");
-  }
-
-  await addDoc(collection(db, "gallery"), {
-    title,
-    imageUrl: data.secure_url,
-    fileHash,
-    createdAt: serverTimestamp()
-  });
-
-  if ($("photoFile")) $("photoFile").value = "";
-  if ($("photoTitle")) $("photoTitle").value = "";
-
-  alert("Fotoğraf yüklendi");
-  loadAdminGallery();
 });
 
 /* TARİH EKLE */
 $("addDateBtn")?.addEventListener("click", async () => {
+  if (isSavingDate) return;
+
+  const btn = $("addDateBtn");
   const title = $("dateTitle")?.value || "";
   const date = $("dateValue")?.value || "";
   const text = $("dateText")?.value || "";
 
-  if (await isDuplicateRecord("dates", { title, date, text })) {
-    alert("Bu tarih zaten eklenmiş");
+  if (!normalizeText(title) && !normalizeText(date) && !normalizeText(text)) {
+    alert("Tarih bilgisi boş olamaz");
     return;
   }
 
-  await addDoc(collection(db, "dates"), {
-    title,
-    date,
-    text,
-    createdAt: serverTimestamp()
-  });
+  try {
+    isSavingDate = true;
+    if (btn) btn.disabled = true;
 
-  if ($("dateTitle")) $("dateTitle").value = "";
-  if ($("dateValue")) $("dateValue").value = "";
-  if ($("dateText")) $("dateText").value = "";
+    if (await isDuplicateRecord("dates", { title, date, text })) {
+      alert("Bu tarih zaten eklenmiş");
+      return;
+    }
 
-  alert("Tarih eklendi");
-  loadAdminDates();
+    await addDoc(collection(db, "dates"), {
+      title,
+      date,
+      text,
+      createdAt: serverTimestamp()
+    });
+
+    if ($("dateTitle")) $("dateTitle").value = "";
+    if ($("dateValue")) $("dateValue").value = "";
+    if ($("dateText")) $("dateText").value = "";
+
+    alert("Tarih eklendi");
+    loadAdminDates();
+  } finally {
+    isSavingDate = false;
+    if (btn) btn.disabled = false;
+  }
 });
 
 /* PLAN EKLE */
 $("addPlanBtn")?.addEventListener("click", async () => {
+  if (isSavingPlan) return;
+
+  const btn = $("addPlanBtn");
   const title = $("planTitle")?.value || "";
   const text = $("planText")?.value || "";
   const type = $("planType")?.value || "near";
 
-  if (await isDuplicateRecord("plans", { title, text, type })) {
-    alert("Bu plan zaten eklenmiş");
+  if (!normalizeText(title) && !normalizeText(text)) {
+    alert("Plan başlığı veya açıklaması boş olamaz");
     return;
   }
 
-  await addDoc(collection(db, "plans"), {
-    title,
-    text,
-    type,
-    done: false,
-    createdAt: serverTimestamp()
-  });
+  try {
+    isSavingPlan = true;
+    if (btn) btn.disabled = true;
 
-  if ($("planTitle")) $("planTitle").value = "";
-  if ($("planText")) $("planText").value = "";
+    if (await isDuplicateRecord("plans", { title, text, type })) {
+      alert("Bu plan zaten eklenmiş");
+      return;
+    }
 
-  alert("Plan eklendi");
-  if (typeof loadAdminPlans === "function") loadAdminPlans();
+    await addDoc(collection(db, "plans"), {
+      title,
+      text,
+      type,
+      done: false,
+      createdAt: serverTimestamp()
+    });
+
+    if ($("planTitle")) $("planTitle").value = "";
+    if ($("planText")) $("planText").value = "";
+
+    alert("Plan eklendi");
+    if (typeof loadAdminPlans === "function") loadAdminPlans();
+  } finally {
+    isSavingPlan = false;
+    if (btn) btn.disabled = false;
+  }
 });
 
 /* SPOTIFY PLAYLIST */
 $("saveSpotifyPlaylistBtn")?.addEventListener("click", async () => {
+  if (isSavingSpotify) return;
+
+  const btn = $("saveSpotifyPlaylistBtn");
   const url = $("spotifyPlaylistUrl")?.value.trim() || "";
 
   if (!url.includes("spotify.com") || !url.includes("playlist")) {
@@ -300,40 +454,74 @@ $("saveSpotifyPlaylistBtn")?.addEventListener("click", async () => {
     return;
   }
 
-  await setDoc(
-    doc(db, "siteSettings", "main"),
-    {
-      spotifyPlaylistUrl: url
-    },
-    { merge: true }
-  );
+  try {
+    isSavingSpotify = true;
+    if (btn) btn.disabled = true;
 
-  alert("Spotify playlist linki kaydedildi");
+    if (await isDuplicateSetting({ spotifyPlaylistUrl: url })) {
+      alert("Bu Spotify playlist linki zaten kayıtlı");
+      return;
+    }
+
+    await setDoc(
+      doc(db, "siteSettings", "main"),
+      {
+        spotifyPlaylistUrl: url
+      },
+      { merge: true }
+    );
+
+    if ($("spotifyPlaylistUrl")) $("spotifyPlaylistUrl").value = "";
+
+    alert("Spotify playlist linki kaydedildi");
+  } finally {
+    isSavingSpotify = false;
+    if (btn) btn.disabled = false;
+  }
 });
 
 /* GİZLİ MESAJ */
 $("saveSecretBtn")?.addEventListener("click", async () => {
+  if (isSavingSecret) return;
+
+  const btn = $("saveSecretBtn");
   const secretMessage = $("secretMessageInput")?.value || "";
 
-  if (await isDuplicateRecord("secretMessages", { secretMessage })) {
-    alert("Bu gizli mesaj zaten eklenmiş");
+  if (!normalizeText(secretMessage)) {
+    alert("Gizli mesaj boş olamaz");
     return;
   }
 
-  await addDoc(collection(db, "secretMessages"), {
-    secretMessage,
-    createdAt: serverTimestamp()
-  });
+  try {
+    isSavingSecret = true;
+    if (btn) btn.disabled = true;
 
-  if ($("secretMessageInput")) $("secretMessageInput").value = "";
+    if (await isDuplicateRecord("secretMessages", { secretMessage })) {
+      alert("Bu gizli mesaj zaten eklenmiş");
+      return;
+    }
 
-  alert("Gizli mesaj listeye eklendi");
-  loadAdminSecrets();
+    await addDoc(collection(db, "secretMessages"), {
+      secretMessage,
+      createdAt: serverTimestamp()
+    });
+
+    if ($("secretMessageInput")) $("secretMessageInput").value = "";
+
+    alert("Gizli mesaj listeye eklendi");
+    loadAdminSecrets();
+  } finally {
+    isSavingSecret = false;
+    if (btn) btn.disabled = false;
+  }
 });
 
 
 /* GİZLİ SORU VE CEVAP */
 $("saveSecretQuestionBtn")?.addEventListener("click", async () => {
+  if (isSavingSecretQuestion) return;
+
+  const btn = $("saveSecretQuestionBtn");
   const question = $("secretQuestionInput")?.value.trim() || "";
   const answer = $("secretAnswerInput")?.value.trim() || "";
 
@@ -342,25 +530,33 @@ $("saveSecretQuestionBtn")?.addEventListener("click", async () => {
     return;
   }
 
-  if (await isDuplicateRecord("secretQuestions", {
-    secretQuestion: question,
-    secretAnswer: answer
-  })) {
-    alert("Bu soru ve cevap zaten eklenmiş");
-    return;
+  try {
+    isSavingSecretQuestion = true;
+    if (btn) btn.disabled = true;
+
+    if (await isDuplicateRecord("secretQuestions", {
+      secretQuestion: question,
+      secretAnswer: answer
+    })) {
+      alert("Bu soru ve cevap zaten eklenmiş");
+      return;
+    }
+
+    await addDoc(collection(db, "secretQuestions"), {
+      secretQuestion: question,
+      secretAnswer: answer.toLocaleLowerCase("tr-TR"),
+      createdAt: serverTimestamp()
+    });
+
+    if ($("secretQuestionInput")) $("secretQuestionInput").value = "";
+    if ($("secretAnswerInput")) $("secretAnswerInput").value = "";
+
+    alert("Soru ve cevap listeye eklendi");
+    loadAdminSecretQuestions();
+  } finally {
+    isSavingSecretQuestion = false;
+    if (btn) btn.disabled = false;
   }
-
-  await addDoc(collection(db, "secretQuestions"), {
-    secretQuestion: question,
-    secretAnswer: answer.toLocaleLowerCase("tr-TR"),
-    createdAt: serverTimestamp()
-  });
-
-  if ($("secretQuestionInput")) $("secretQuestionInput").value = "";
-  if ($("secretAnswerInput")) $("secretAnswerInput").value = "";
-
-  alert("Soru ve cevap listeye eklendi");
-  loadAdminSecretQuestions();
 });
 
 /* ÇIKIŞ */
@@ -999,11 +1195,19 @@ $("secretNextBtn")?.addEventListener("click", () => {
   }
 });
 $("saveContactBtn")?.addEventListener("click", async () => {
+  const saidInstagram = $("saidInstagramInput")?.value || "";
+  const veraInstagram = $("veraInstagramInput")?.value || "";
+
+  if (await isDuplicateSetting({ saidInstagram, veraInstagram })) {
+    alert("Bu iletişim bilgileri zaten kayıtlı");
+    return;
+  }
+
   await setDoc(
     doc(db, "siteSettings", "main"),
     {
-      saidInstagram: $("saidInstagramInput")?.value || "",
-      veraInstagram: $("veraInstagramInput")?.value || ""
+      saidInstagram,
+      veraInstagram
     },
     { merge: true }
   );
