@@ -1,5 +1,7 @@
 
-import { auth, db } from "./firebase.js";
+import {
+  auth,
+  db } from "./firebase.js";
 
 import {
   signInWithEmailAndPassword,
@@ -14,6 +16,7 @@ import {
   query,
   orderBy,
   doc,
+  getDoc,
   setDoc,
   deleteDoc,
   serverTimestamp
