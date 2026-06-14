@@ -21,6 +21,7 @@
       <button data-page="plansPage" class="menu-btn">📝 Planlarımız</button>
       <button data-page="musicPage" class="menu-btn">🎵 Müzik Listesi</button>
       <button data-page="secretPage" class="menu-btn">💌 Gizli Mesaj</button>
+      <button data-page="secretQuestionPage" class="menu-btn">🔐 Gizli Soru</button>
     </nav>
   </aside>
 
@@ -196,6 +197,28 @@
 
   <div id="secretAdminList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4"></div>
 </section>
+
+      <section id="secretQuestionPage" class="admin-page admin-card hidden">
+        <h2>🔐 Gizli Soru Ayarları</h2>
+
+        <input
+          id="secretQuestionInput"
+          placeholder="Örn: İlk buluştuğumuz yer"
+        >
+
+        <input
+          id="secretAnswerInput"
+          placeholder="Doğru cevap"
+        >
+
+        <button id="saveSecretQuestionBtn">
+          Soru ve Cevabı Kaydet
+        </button>
+
+        <p class="text-sm text-rose-700 mt-4">
+          Bu soru ana sitedeki gizli mesaj alanında ipucu olarak görünür. Cevap küçük/büyük harfe duyarsızdır.
+        </p>
+      </section>
     </div>
 
   </main>
