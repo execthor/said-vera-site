@@ -90,6 +90,94 @@ if (veraInstagramLink && data.veraInstagram) {
 }
 }
 
+
+function addGallerySizeStyles() {
+  if (document.getElementById("gallerySizeStyles")) return;
+
+  const style = document.createElement("style");
+  style.id = "gallerySizeStyles";
+  style.textContent = `
+    #galleryContainer {
+      align-items: stretch;
+    }
+
+    .gallery-item {
+      width: 100%;
+      overflow: hidden;
+      border-radius: 18px;
+    }
+
+    .gallery-item img,
+    .gallery-img {
+      width: 100%;
+      object-fit: cover;
+      display: block;
+      border-radius: 18px;
+    }
+
+    .gallery-item-vertical {
+      height: 360px;
+    }
+
+    .gallery-img-vertical {
+      height: 315px;
+    }
+
+    .gallery-item-landscape {
+      height: 270px;
+    }
+
+    .gallery-img-landscape {
+      height: 225px;
+    }
+
+    .gallery-item p {
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8px 6px;
+    }
+
+    @media (max-width: 768px) {
+      .gallery-item-vertical,
+      .gallery-item-landscape {
+        height: 300px;
+      }
+
+      .gallery-img-vertical,
+      .gallery-img-landscape {
+        height: 255px;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
+addGallerySizeStyles();
+
+function getImageOrientation(imageUrl) {
+  return new Promise((resolve) => {
+    const img = new Image();
+
+    img.onload = () => {
+      if (img.naturalWidth > img.naturalHeight) {
+        resolve("landscape");
+      } else {
+        resolve("vertical");
+      }
+    };
+
+    img.onerror = () => {
+      resolve("vertical");
+    };
+
+    img.src = imageUrl;
+  });
+}
+
 async function loadGallery() {
   const container = document.getElementById("galleryContainer");
   if (!container) return;
@@ -97,14 +185,43 @@ async function loadGallery() {
   const q = query(collection(db, "gallery"), orderBy("createdAt", "desc"));
   const snapshot = await getDocs(q);
 
+  const items = [];
+
+  for (const docSnap of snapshot.docs) {
+    const item = docSnap.data();
+    const orientation = await getImageOrientation(item.imageUrl);
+
+    items.push({
+      ...item,
+      orientation
+    });
+  }
+
+  const verticalImages = items.filter((item) => item.orientation !== "landscape");
+  const landscapeImages = items.filter((item) => item.orientation === "landscape");
+
+  const sortedItems = [...verticalImages, ...landscapeImages];
+
   container.innerHTML = "";
 
-  snapshot.forEach((doc) => {
-    const item = doc.data();
+  sortedItems.forEach((item) => {
+    const isLandscape = item.orientation === "landscape";
+
+    const cardClass = isLandscape
+      ? "gallery-item gallery-item-landscape md:col-span-2"
+      : "gallery-item gallery-item-vertical";
+
+    const imageClass = isLandscape
+      ? "gallery-img gallery-img-landscape"
+      : "gallery-img gallery-img-vertical";
 
     container.innerHTML += `
-      <div class="gallery-item">
-        <img src="${item.imageUrl}" alt="${item.title || "Galeri fotoğrafı"}">
+      <div class="${cardClass}">
+        <img
+          src="${item.imageUrl}"
+          alt="${item.title || "Galeri fotoğrafı"}"
+          class="${imageClass}"
+        >
         <p>${item.title || ""}</p>
       </div>
     `;
