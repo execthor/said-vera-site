@@ -216,14 +216,14 @@ function addGallerySizeStyles() {
 
     .gallery-photo-modal-box {
       position: relative;
-      max-width: 70vw;
-      max-height: 70vh;
+      max-width: 90vw;
+      max-height: 90vh;
       animation: galleryZoomIn 0.25s ease;
     }
 
     .gallery-photo-modal img {
-      max-width: 70vw;
-      max-height: 70vh;
+      max-width: 90vw;
+      max-height: 90vh;
       width: auto;
       height: auto;
       object-fit: contain;
@@ -267,8 +267,8 @@ function addGallerySizeStyles() {
 
       .gallery-photo-modal-box,
       .gallery-photo-modal img {
-        max-width: 70vw;
-        max-height: 70vh;
+        max-width: 90vw;
+        max-height: 90vh;
       }
     }
 
@@ -530,7 +530,7 @@ document.addEventListener("mouseover", (e) => {
     if (!img) return;
 
     openGalleryPhotoModal(img.src);
-  }, 1000);
+  }, 1500);
 });
 
 document.addEventListener("mouseout", (e) => {
