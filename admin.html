@@ -22,6 +22,7 @@
       <button data-page="musicPage" class="menu-btn">🎵 Müzik Listesi</button>
       <button data-page="secretPage" class="menu-btn">💌 Gizli Mesaj</button>
       <button data-page="secretQuestionPage" class="menu-btn">🔐 Gizli Soru</button>
+      <button data-page="contactPage" class="menu-btn">📱 İletişim</button>
     </nav>
   </aside>
 
@@ -220,6 +221,32 @@
 
   <div id="secretQuestionAdminList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4"></div>
 </section>
+
+
+      <section id="contactPage" class="admin-page admin-card hidden">
+        <h2>📱 İletişim Linkleri</h2>
+
+        <input
+          id="saidInstagramInput"
+          type="url"
+          placeholder="Muhammed Instagram linki"
+        >
+
+        <input
+          id="veraInstagramInput"
+          type="url"
+          placeholder="Vera Instagram linki"
+        >
+
+        <button id="saveContactBtn">
+          İletişim Bilgilerini Kaydet
+        </button>
+
+        <p class="text-sm text-rose-700 mt-4">
+          Örnek: https://www.instagram.com/kullaniciadi/
+        </p>
+      </section>
+
     </div>
 
   </main>
@@ -418,6 +445,6 @@
 
 </style>
 
-<script type="module" src="admin.js?v=admin-photo-hover-fix-1"></script>
+<script type="module" src="admin.js?v=contact-menu-final-1"></script>
 </body>
 </html>
