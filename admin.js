@@ -1,5 +1,4 @@
-let secretQuestionItems = [];
-let secretQuestionPageCurrent = 1;
+
 import { auth, db } from "./firebase.js";
 
 import {
@@ -37,6 +36,9 @@ let datePageCurrent = 1;
 
 let secretItems = [];
 let secretPageCurrent = 1;
+
+let secretQuestionItems = [];
+let secretQuestionPageCurrent = 1;
 
 const loginBox = $("loginBox");
 const adminBox = $("adminBox");
@@ -860,6 +862,7 @@ function renderSecretPage() {
 
       alert("Gizli mesaj silindi");
       loadAdminSecrets();
+    loadAdminSecretQuestions();
     });
   });
 }
@@ -888,6 +891,11 @@ $("saveContactBtn")?.addEventListener("click", async () => {
     },
     { merge: true }
   );
+
+  alert("İletişim bilgileri kaydedildi");
+});
+
+/* GİZLİ SORULAR LİSTE */
 async function loadAdminSecretQuestions() {
   const list = $("secretQuestionAdminList");
   if (!list) return;
@@ -930,8 +938,8 @@ function renderSecretQuestionPage() {
           ${item.secretQuestion || "Sorusu yok"}
         </h3>
 
-        <p class="text-sm text-rose-900/80 mb-4">
-          Cevap: ${item.secretAnswer || "-"}
+        <p class="text-sm text-rose-900/80 mb-4 break-words">
+          <strong>Cevap:</strong> ${item.secretAnswer || "-"}
         </p>
 
         <button
@@ -952,11 +960,15 @@ function renderSecretQuestionPage() {
   });
 
   const totalPages = Math.ceil(secretQuestionItems.length / pageSize) || 1;
-  if (info) info.textContent = `${secretQuestionPageCurrent} / ${totalPages}`;
+
+  if (info) {
+    info.textContent = `${secretQuestionPageCurrent} / ${totalPages}`;
+  }
 
   document.querySelectorAll(".activateSecretQuestionBtn").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const selected = secretQuestionItems.find((x) => x.id === btn.dataset.id);
+
       if (!selected) return;
 
       await setDoc(
@@ -998,6 +1010,4 @@ $("secretQuestionNextBtn")?.addEventListener("click", () => {
     secretQuestionPageCurrent++;
     renderSecretQuestionPage();
   }
-});
-  alert("İletişim bilgileri kaydedildi");
 });
