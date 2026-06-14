@@ -62,6 +62,15 @@ async function loadSettings() {
 
 window.savedSecretMessage = data.secretMessage || "";
 
+window.savedSecretQuestion = data.secretQuestion || "İlk buluştuğumuz yer";
+window.savedSecretAnswer = data.secretAnswer || "afyon";
+
+const secretPass = document.getElementById("secretPass");
+
+if (secretPass) {
+  secretPass.placeholder = window.savedSecretQuestion;
+}
+
 const secretMessageBox = document.getElementById("secretMessage");
 
 if (secretMessageBox) {
@@ -190,9 +199,14 @@ async function loadMusic() {
     return;
   }
 
-  const embedUrl = data.spotifyPlaylistUrl
-    .replace("open.spotify.com/playlist/", "open.spotify.com/embed/playlist/")
-    .split("?")[0];
+  const playlistMatch = data.spotifyPlaylistUrl.match(/playlist\/([a-zA-Z0-9]+)/);
+  const playlistId = playlistMatch ? playlistMatch[1] : "";
+  const embedUrl = playlistId
+    ? `https://open.spotify.com/embed/playlist/${playlistId}`
+    : data.spotifyPlaylistUrl
+        .replace("open.spotify.com/playlist/", "open.spotify.com/embed/playlist/")
+        .replace("open.spotify.com/intl-tr/playlist/", "open.spotify.com/embed/playlist/")
+        .split("?")[0];
 
   container.innerHTML = `
     <iframe
