@@ -611,10 +611,17 @@ function renderStoryPage() {
         </p>
 
         <button
-          class="selectStoryBtn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold"
+          class="selectStoryBtn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold w-full mb-2"
           data-id="${item.id}"
         >
           Seç / Yayınla
+        </button>
+
+        <button
+          class="deleteStoryBtn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold w-full"
+          data-id="${item.id}"
+        >
+          Sil
         </button>
       </div>
     `;
@@ -638,6 +645,20 @@ function renderStoryPage() {
       );
 
       alert("Bu hikaye ana sitede yayınlandı");
+    });
+  });
+
+  document.querySelectorAll(".deleteStoryBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id;
+
+      if (!id) return;
+      if (!confirm("Bu hikaye silinsin mi?")) return;
+
+      await deleteDoc(doc(db, "stories", id));
+
+      alert("Hikaye silindi");
+      loadAdminStories();
     });
   });
 }
@@ -1148,6 +1169,29 @@ $("saveContactBtn")?.addEventListener("click", async () => {
 
   alert("İletişim bilgileri kaydedildi");
   loadContactSettings();
+});
+
+$("deleteContactBtn")?.addEventListener("click", async () => {
+  if (!confirm("İletişim bilgileri silinsin mi?")) return;
+
+  await setDoc(
+    doc(db, "siteSettings", "main"),
+    {
+      saidInstagram: "",
+      veraInstagram: ""
+    },
+    { merge: true }
+  );
+
+  if ($("saidInstagramInput")) $("saidInstagramInput").value = "";
+  if ($("veraInstagramInput")) $("veraInstagramInput").value = "";
+
+  renderCurrentContactLinks({
+    saidInstagram: "",
+    veraInstagram: ""
+  });
+
+  alert("İletişim bilgileri silindi");
 });
 
 /* GİZLİ SORULAR LİSTE */
