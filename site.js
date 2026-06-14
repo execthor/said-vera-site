@@ -63,7 +63,7 @@ async function loadSettings() {
 window.savedSecretMessage = data.secretMessage || "";
 
 window.savedSecretQuestion = data.secretQuestion || "İlk buluştuğumuz yer";
-window.savedSecretAnswer = data.secretAnswer || "afyon";
+window.savedSecretAnswer = (data.secretAnswer || "afyon").toLocaleLowerCase("tr-TR");
 
 const secretPass = document.getElementById("secretPass");
 
