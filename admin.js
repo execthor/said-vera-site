@@ -34,6 +34,9 @@ let heroVideoPageCurrent = 1;
 let dateItems = [];
 let datePageCurrent = 1;
 
+let planItems = [];
+let planPageCurrent = 1;
+
 let secretItems = [];
 let secretPageCurrent = 1;
 
@@ -60,8 +63,15 @@ onAuthStateChanged(auth, (user) => {
   if (loginBox) loginBox.style.display = user ? "none" : "block";
   if (adminBox) adminBox.style.display = user ? "block" : "none";
 
-  // Admin panelde kayıt listeleri gösterilmeyecek.
-  // Bu yüzden girişte eski kayıtları otomatik listelemiyoruz.
+  if (user) {
+    loadAdminGallery();
+    loadAdminStories();
+    loadAdminHeroVideos();
+    loadAdminDates();
+    loadAdminPlans();
+    loadAdminSecrets();
+    loadAdminSecretQuestions();
+  }
 });
 
 /* SAYFA GEÇİŞ */
@@ -107,28 +117,25 @@ $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
     return alert("Video yüklenemedi");
   }
 
-  await setDoc(
-    doc(db, "siteSettings", "main"),
-    { heroVideo: data.secure_url },
-    { merge: true }
-  );
+  await addDoc(collection(db, "heroVideos"), {
+    videoUrl: data.secure_url,
+    createdAt: serverTimestamp()
+  });
 
-  alert("Video ana siteye kaydedildi");
-  if ($("heroVideoFile")) $("heroVideoFile").value = "";
+  alert("Video arşive eklendi");
+  loadAdminHeroVideos();
 });
 
 /* HİKAYE EKLE */
 $("saveStoryBtn")?.addEventListener("click", async () => {
-  await setDoc(
-    doc(db, "siteSettings", "main"),
-    {
-      storyTitle: $("storyTitleInput")?.value || "",
-      storyText: $("storyTextInput")?.value || ""
-    },
-    { merge: true }
-  );
+  await addDoc(collection(db, "stories"), {
+    storyTitle: $("storyTitleInput")?.value || "",
+    storyText: $("storyTextInput")?.value || "",
+    createdAt: serverTimestamp()
+  });
 
-  alert("Hikaye ana siteye kaydedildi");
+  alert("Hikaye listeye eklendi");
+  loadAdminStories();
 });
 
 /* FOTOĞRAF YÜKLE */
@@ -163,8 +170,7 @@ $("uploadPhotoBtn")?.addEventListener("click", async () => {
   });
 
   alert("Fotoğraf yüklendi");
-  if ($("photoFile")) $("photoFile").value = "";
-  if ($("photoTitle")) $("photoTitle").value = "";
+  loadAdminGallery();
 });
 
 /* TARİH EKLE */
@@ -177,9 +183,7 @@ $("addDateBtn")?.addEventListener("click", async () => {
   });
 
   alert("Tarih eklendi");
-  if ($("dateTitle")) $("dateTitle").value = "";
-  if ($("dateValue")) $("dateValue").value = "";
-  if ($("dateText")) $("dateText").value = "";
+  loadAdminDates();
 });
 
 /* PLAN EKLE */
@@ -192,9 +196,11 @@ $("addPlanBtn")?.addEventListener("click", async () => {
     createdAt: serverTimestamp()
   });
 
-  alert("Plan eklendi");
   if ($("planTitle")) $("planTitle").value = "";
   if ($("planText")) $("planText").value = "";
+
+  alert("Plan eklendi");
+  loadAdminPlans();
 });
 
 /* SPOTIFY PLAYLIST */
@@ -219,13 +225,13 @@ $("saveSpotifyPlaylistBtn")?.addEventListener("click", async () => {
 
 /* GİZLİ MESAJ */
 $("saveSecretBtn")?.addEventListener("click", async () => {
-  await setDoc(
-    doc(db, "siteSettings", "main"),
-    { secretMessage: $("secretMessageInput")?.value || "" },
-    { merge: true }
-  );
+  await addDoc(collection(db, "secretMessages"), {
+    secretMessage: $("secretMessageInput")?.value || "",
+    createdAt: serverTimestamp()
+  });
 
-  alert("Gizli mesaj ana siteye kaydedildi");
+  alert("Gizli mesaj listeye eklendi");
+  loadAdminSecrets();
 });
 
 
@@ -239,16 +245,14 @@ $("saveSecretQuestionBtn")?.addEventListener("click", async () => {
     return;
   }
 
-  await setDoc(
-    doc(db, "siteSettings", "main"),
-    {
-      secretQuestion: question,
-      secretAnswer: answer.toLocaleLowerCase("tr-TR")
-    },
-    { merge: true }
-  );
+  await addDoc(collection(db, "secretQuestions"), {
+    secretQuestion: question,
+    secretAnswer: answer.toLocaleLowerCase("tr-TR"),
+    createdAt: serverTimestamp()
+  });
 
-  alert("Soru ve cevap ana siteye kaydedildi");
+  alert("Soru ve cevap listeye eklendi");
+  loadAdminSecretQuestions();
 });
 
 /* ÇIKIŞ */
@@ -785,6 +789,94 @@ $("datesNextBtn")?.addEventListener("click", () => {
     renderDatePage();
   }
 });
+
+/* PLANLAR */
+async function loadAdminPlans() {
+  const list = $("plansAdminList");
+  if (!list) return;
+
+  const q = query(collection(db, "plans"), orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
+
+  planItems = [];
+
+  snapshot.forEach((docSnap) => {
+    planItems.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  renderPlanPage();
+}
+
+function renderPlanPage() {
+  const list = $("plansAdminList");
+  const info = $("plansPageInfo");
+
+  if (!list) return;
+
+  const start = (planPageCurrent - 1) * pageSize;
+  const end = start + pageSize;
+  const pageItems = planItems.slice(start, end);
+
+  list.innerHTML = "";
+
+  pageItems.forEach((item) => {
+    const typeText = item.type === "dream" ? "Hayal Listesi" : "Yakın Planlar";
+
+    list.innerHTML += `
+      <div class="data-card">
+        <div class="data-card-body">
+          <h3 class="data-card-title">${item.title || "Başlıksız"}</h3>
+          <p class="data-card-text mb-2">${item.text || ""}</p>
+          <p class="text-xs font-bold text-rose-500 mb-3">${typeText}</p>
+
+          <button
+            class="deletePlanBtn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold w-full"
+            data-id="${item.id}"
+          >
+            Sil
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  const totalPages = Math.ceil(planItems.length / pageSize) || 1;
+
+  if (info) {
+    info.textContent = `${planPageCurrent} / ${totalPages}`;
+  }
+
+  document.querySelectorAll(".deletePlanBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Bu plan silinsin mi?")) return;
+
+      await deleteDoc(doc(db, "plans", btn.dataset.id));
+
+      alert("Plan silindi");
+      loadAdminPlans();
+    });
+  });
+}
+
+$("plansPrevBtn")?.addEventListener("click", () => {
+  if (planPageCurrent > 1) {
+    planPageCurrent--;
+    renderPlanPage();
+  }
+});
+
+$("plansNextBtn")?.addEventListener("click", () => {
+  const totalPages = Math.ceil(planItems.length / pageSize) || 1;
+
+  if (planPageCurrent < totalPages) {
+    planPageCurrent++;
+    renderPlanPage();
+  }
+});
+
 async function loadAdminSecrets() {
   const list = $("secretAdminList");
   if (!list) return;
