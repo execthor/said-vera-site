@@ -1,4 +1,5 @@
-
+let secretQuestionItems = [];
+let secretQuestionPageCurrent = 1;
 import { auth, db } from "./firebase.js";
 
 import {
@@ -63,6 +64,7 @@ onAuthStateChanged(auth, (user) => {
     loadAdminHeroVideos();
     loadAdminDates();
     loadAdminSecrets();
+    loadAdminSecretQuestions();
   }
 });
 
@@ -233,16 +235,14 @@ $("saveSecretQuestionBtn")?.addEventListener("click", async () => {
     return;
   }
 
-  await setDoc(
-    doc(db, "siteSettings", "main"),
-    {
-      secretQuestion: question,
-      secretAnswer: answer.toLocaleLowerCase("tr-TR")
-    },
-    { merge: true }
-  );
+  await addDoc(collection(db, "secretQuestions"), {
+    secretQuestion: question,
+    secretAnswer: answer.toLocaleLowerCase("tr-TR"),
+    createdAt: serverTimestamp()
+  });
 
-  alert("Gizli soru ve cevap kaydedildi");
+  alert("Soru ve cevap listeye eklendi");
+  loadAdminSecretQuestions();
 });
 
 /* ÇIKIŞ */
@@ -888,6 +888,116 @@ $("saveContactBtn")?.addEventListener("click", async () => {
     },
     { merge: true }
   );
+async function loadAdminSecretQuestions() {
+  const list = $("secretQuestionAdminList");
+  if (!list) return;
 
+  const q = query(
+    collection(db, "secretQuestions"),
+    orderBy("createdAt", "desc")
+  );
+
+  const snapshot = await getDocs(q);
+
+  secretQuestionItems = [];
+
+  snapshot.forEach((docSnap) => {
+    secretQuestionItems.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  renderSecretQuestionPage();
+}
+
+function renderSecretQuestionPage() {
+  const list = $("secretQuestionAdminList");
+  const info = $("secretQuestionPageInfo");
+
+  if (!list) return;
+
+  const start = (secretQuestionPageCurrent - 1) * pageSize;
+  const end = start + pageSize;
+  const pageItems = secretQuestionItems.slice(start, end);
+
+  list.innerHTML = "";
+
+  pageItems.forEach((item) => {
+    list.innerHTML += `
+      <div class="bg-white/70 rounded-3xl shadow-lg border border-rose-100 p-4">
+        <h3 class="font-bold text-rose-600 text-lg mb-2">
+          ${item.secretQuestion || "Sorusu yok"}
+        </h3>
+
+        <p class="text-sm text-rose-900/80 mb-4">
+          Cevap: ${item.secretAnswer || "-"}
+        </p>
+
+        <button
+          class="activateSecretQuestionBtn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold w-full mb-2"
+          data-id="${item.id}"
+        >
+          Aktif Yap
+        </button>
+
+        <button
+          class="deleteSecretQuestionBtn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold w-full"
+          data-id="${item.id}"
+        >
+          Sil
+        </button>
+      </div>
+    `;
+  });
+
+  const totalPages = Math.ceil(secretQuestionItems.length / pageSize) || 1;
+  if (info) info.textContent = `${secretQuestionPageCurrent} / ${totalPages}`;
+
+  document.querySelectorAll(".activateSecretQuestionBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const selected = secretQuestionItems.find((x) => x.id === btn.dataset.id);
+      if (!selected) return;
+
+      await setDoc(
+        doc(db, "siteSettings", "main"),
+        {
+          secretQuestion: selected.secretQuestion || "",
+          secretAnswer: selected.secretAnswer || ""
+        },
+        { merge: true }
+      );
+
+      alert("Bu soru ve cevap aktif yapıldı");
+    });
+  });
+
+  document.querySelectorAll(".deleteSecretQuestionBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Bu soru silinsin mi?")) return;
+
+      await deleteDoc(doc(db, "secretQuestions", btn.dataset.id));
+
+      alert("Soru silindi");
+      loadAdminSecretQuestions();
+    });
+  });
+}
+
+$("secretQuestionPrevBtn")?.addEventListener("click", () => {
+  if (secretQuestionPageCurrent > 1) {
+    secretQuestionPageCurrent--;
+    renderSecretQuestionPage();
+  }
+});
+
+$("secretQuestionNextBtn")?.addEventListener("click", () => {
+  const totalPages = Math.ceil(secretQuestionItems.length / pageSize) || 1;
+
+  if (secretQuestionPageCurrent < totalPages) {
+    secretQuestionPageCurrent++;
+    renderSecretQuestionPage();
+  }
+});
   alert("İletişim bilgileri kaydedildi");
 });
