@@ -353,8 +353,71 @@
   right: 18px;
   bottom: 18px;
 }
+
+/* Admin fotoğraf hover önizleme düzeltmesi */
+#adminPhotoPreview {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(8px);
+  padding: 24px;
+}
+
+#adminPhotoPreview.active {
+  display: flex;
+}
+
+.admin-photo-preview-box {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.admin-photo-preview-box img {
+  max-width: 90vw;
+  max-height: 90vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 28px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+}
+
+#adminPhotoPreviewClose {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: #e11d48;
+  color: white;
+  font-size: 28px;
+  line-height: 42px;
+  text-align: center;
+  border: none;
+  z-index: 2;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+}
+
+.admin-gallery-img {
+  transition: transform .35s ease, box-shadow .35s ease;
+}
+
+@media (hover:hover) and (pointer:fine) {
+  .admin-gallery-img:hover {
+    transform: scale(1.04);
+    box-shadow: 0 18px 40px rgba(0,0,0,.35);
+  }
+}
+
 </style>
 
-<script type="module" src="admin.js?v=photo-hash-docid-1"></script>
+<script type="module" src="admin.js?v=admin-photo-hover-fix-1"></script>
 </body>
 </html>
