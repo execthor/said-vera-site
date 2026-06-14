@@ -25,6 +25,41 @@ import {
 const $ = (id) => document.getElementById(id);
 const pageSize = 25;
 
+function publishBadge(isPublished) {
+  return `
+    <span class="text-xs font-black px-3 py-1 rounded-full ${
+      isPublished
+        ? "bg-emerald-100 text-emerald-700"
+        : "bg-rose-100 text-rose-700"
+    }">
+      ${isPublished ? "Yayında" : "Yayında Değil"}
+    </span>
+  `;
+}
+
+async function publishSingleItem(collectionName, selectedId) {
+  const snapshot = await getDocs(collection(db, collectionName));
+
+  const updates = snapshot.docs.map((docSnap) => {
+    return setDoc(
+      doc(db, collectionName, docSnap.id),
+      { published: docSnap.id === selectedId },
+      { merge: true }
+    );
+  });
+
+  await Promise.all(updates);
+}
+
+async function togglePublished(collectionName, id, value) {
+  await setDoc(
+    doc(db, collectionName, id),
+    { published: value },
+    { merge: true }
+  );
+}
+
+
 function normalizeText(value) {
   return (value || "")
     .toString()
@@ -132,6 +167,14 @@ document.querySelectorAll("[data-page]").forEach((btn) => {
     });
 
     btn.classList.add("active-menu");
+
+    if (target === "videoPage" && typeof loadAdminHeroVideos === "function") loadAdminHeroVideos();
+    if (target === "storyPage" && typeof loadAdminStories === "function") loadAdminStories();
+    if (target === "galleryPage" && typeof loadAdminGallery === "function") loadAdminGallery();
+    if (target === "datesPage" && typeof loadAdminDates === "function") loadAdminDates();
+    if (target === "plansPage" && typeof loadAdminPlans === "function") loadAdminPlans();
+    if (target === "secretPage" && typeof loadAdminSecrets === "function") loadAdminSecrets();
+    if (target === "secretQuestionPage" && typeof loadAdminSecretQuestions === "function") loadAdminSecretQuestions();
   });
 });
 
@@ -169,6 +212,7 @@ $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
   await addDoc(collection(db, "heroVideos"), {
     videoUrl: data.secure_url,
     fileHash,
+    published: false,
     createdAt: serverTimestamp()
   });
 
@@ -191,6 +235,7 @@ $("saveStoryBtn")?.addEventListener("click", async () => {
   await addDoc(collection(db, "stories"), {
     storyTitle,
     storyText,
+    published: false,
     createdAt: serverTimestamp()
   });
 
@@ -237,6 +282,7 @@ $("uploadPhotoBtn")?.addEventListener("click", async () => {
     title,
     imageUrl: data.secure_url,
     fileHash,
+    published: false,
     createdAt: serverTimestamp()
   });
 
@@ -262,6 +308,7 @@ $("addDateBtn")?.addEventListener("click", async () => {
     title,
     date,
     text,
+    published: false,
     createdAt: serverTimestamp()
   });
 
@@ -331,6 +378,7 @@ $("saveSecretBtn")?.addEventListener("click", async () => {
 
   await addDoc(collection(db, "secretMessages"), {
     secretMessage,
+    published: false,
     createdAt: serverTimestamp()
   });
 
@@ -362,6 +410,7 @@ $("saveSecretQuestionBtn")?.addEventListener("click", async () => {
   await addDoc(collection(db, "secretQuestions"), {
     secretQuestion: question,
     secretAnswer: answer.toLocaleLowerCase("tr-TR"),
+    published: false,
     createdAt: serverTimestamp()
   });
 
@@ -410,6 +459,8 @@ function renderGalleryPage() {
   list.innerHTML = "";
 
   pageItems.forEach((item) => {
+    const isPublished = item.published !== false;
+
     list.innerHTML += `
       <div class="relative bg-white/70 rounded-3xl overflow-hidden shadow-lg border border-rose-100 group">
         <img 
@@ -419,12 +470,26 @@ function renderGalleryPage() {
         >
 
         <div class="p-4">
+          <div class="flex items-center justify-between gap-2 mb-3">
+            ${publishBadge(isPublished)}
+
+            <label class="flex items-center gap-2 text-sm font-bold text-rose-700 cursor-pointer">
+              <input
+                type="checkbox"
+                class="publishGalleryCheck w-5 h-5 accent-rose-500"
+                data-id="${item.id}"
+                ${isPublished ? "checked" : ""}
+              >
+              Yayınla
+            </label>
+          </div>
+
           <h3 class="font-bold text-rose-600 text-lg mb-3">
             ${item.title || "Başlıksız"}
           </h3>
 
           <button 
-            class="deleteGalleryBtn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold"
+            class="deleteGalleryBtn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold w-full"
             data-id="${item.id}"
           >
             Sil
@@ -435,7 +500,16 @@ function renderGalleryPage() {
   });
 
   const totalPages = Math.ceil(galleryItems.length / pageSize) || 1;
-  if (info) info.textContent = `${galleryPageCurrent} / ${totalPages}`;
+  const publishedCount = galleryItems.filter((item) => item.published !== false).length;
+
+  if (info) info.textContent = `${galleryPageCurrent} / ${totalPages} | Yayında: ${publishedCount}`;
+
+  document.querySelectorAll(".publishGalleryCheck").forEach((check) => {
+    check.addEventListener("change", async () => {
+      await togglePublished("gallery", check.dataset.id, check.checked);
+      loadAdminGallery();
+    });
+  });
 
   document.querySelectorAll(".deleteGalleryBtn").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -605,8 +679,14 @@ function renderStoryPage() {
   list.innerHTML = "";
 
   pageItems.forEach((item) => {
+    const isPublished = item.published === true;
+
     list.innerHTML += `
       <div class="bg-white/70 rounded-3xl shadow-lg border border-rose-100 p-4">
+        <div class="mb-3">
+          ${publishBadge(isPublished)}
+        </div>
+
         <h3 class="font-bold text-rose-600 text-lg mb-2">
           ${item.storyTitle || "Başlıksız"}
         </h3>
@@ -619,7 +699,7 @@ function renderStoryPage() {
           class="selectStoryBtn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold w-full mb-2"
           data-id="${item.id}"
         >
-          Seç / Yayınla
+          ${isPublished ? "Yayında" : "Yayınla"}
         </button>
 
         <button
@@ -640,16 +720,20 @@ function renderStoryPage() {
       const selected = storyItems.find((x) => x.id === btn.dataset.id);
       if (!selected) return;
 
+      await publishSingleItem("stories", selected.id);
+
       await setDoc(
         doc(db, "siteSettings", "main"),
         {
           storyTitle: selected.storyTitle || "",
-          storyText: selected.storyText || ""
+          storyText: selected.storyText || "",
+          storyId: selected.id
         },
         { merge: true }
       );
 
       alert("Bu hikaye ana sitede yayınlandı");
+      loadAdminStories();
     });
   });
 
@@ -717,6 +801,8 @@ function renderHeroVideoPage() {
   list.innerHTML = "";
 
   pageItems.forEach((item) => {
+    const isPublished = item.published === true;
+
     list.innerHTML += `
       <div 
         class="admin-video-card bg-white/70 rounded-3xl overflow-hidden shadow-lg border border-rose-100 p-3"
@@ -729,11 +815,16 @@ function renderHeroVideoPage() {
           playsinline
         ></video>
 
+        <div class="mb-3">
+          ${publishBadge(isPublished)}
+        </div>
+
         <button
           class="selectHeroVideoBtn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold w-full mb-2"
           data-url="${item.videoUrl}"
+          data-id="${item.id}"
         >
-          Seç / Yayınla
+          ${isPublished ? "Yayında" : "Yayınla"}
         </button>
 
         <button
@@ -751,13 +842,19 @@ function renderHeroVideoPage() {
 
   document.querySelectorAll(".selectHeroVideoBtn").forEach((btn) => {
     btn.addEventListener("click", async () => {
+      await publishSingleItem("heroVideos", btn.dataset.id);
+
       await setDoc(
         doc(db, "siteSettings", "main"),
-        { heroVideo: btn.dataset.url },
+        {
+          heroVideo: btn.dataset.url,
+          heroVideoId: btn.dataset.id
+        },
         { merge: true }
       );
 
       alert("Video yayınlandı");
+      loadAdminHeroVideos();
     });
   });
 
@@ -932,8 +1029,24 @@ function renderDatePage() {
   list.innerHTML = "";
 
   pageItems.forEach((item) => {
+    const isPublished = item.published !== false;
+
     list.innerHTML += `
       <div class="date-admin-card">
+        <div class="flex items-center justify-between gap-2 mb-4">
+          ${publishBadge(isPublished)}
+
+          <label class="flex items-center gap-2 text-sm font-bold text-white cursor-pointer">
+            <input
+              type="checkbox"
+              class="publishDateCheck w-5 h-5 accent-rose-500"
+              data-id="${item.id}"
+              ${isPublished ? "checked" : ""}
+            >
+            Yayınla
+          </label>
+        </div>
+
         <h3>${formatDateTRAdmin(item.date)}</h3>
         <h4>${item.title || "Başlıksız"}</h4>
         <p>${item.text || ""}</p>
@@ -949,10 +1062,18 @@ function renderDatePage() {
   });
 
   const totalPages = Math.ceil(dateItems.length / pageSize) || 1;
+  const publishedCount = dateItems.filter((item) => item.published !== false).length;
 
   if (info) {
-    info.textContent = `${datePageCurrent} / ${totalPages}`;
+    info.textContent = `${datePageCurrent} / ${totalPages} | Yayında: ${publishedCount}`;
   }
+
+  document.querySelectorAll(".publishDateCheck").forEach((check) => {
+    check.addEventListener("change", async () => {
+      await togglePublished("dates", check.dataset.id, check.checked);
+      loadAdminDates();
+    });
+  });
 
   document.querySelectorAll(".deleteDateBtn").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -1012,18 +1133,12 @@ function renderPlanPage() {
   const dreamPlans = planItems.filter((item) => item.type === "dream");
 
   function createPlanCard(item) {
-    const isPublished = item.published !== false;
+    const isPublished = item.published === true;
 
     return `
       <div class="bg-white/70 rounded-3xl shadow-lg border border-rose-100 p-4">
         <div class="flex items-center justify-between gap-3 mb-3">
-          <span class="text-xs font-black px-3 py-1 rounded-full ${
-            isPublished
-              ? "bg-emerald-100 text-emerald-700"
-              : "bg-rose-100 text-rose-700"
-          }">
-            ${isPublished ? "Yayında" : "Yayında Değil"}
-          </span>
+          ${publishBadge(isPublished)}
 
           <label class="flex items-center gap-2 text-sm font-bold text-rose-700 cursor-pointer">
             <input
@@ -1169,8 +1284,14 @@ function renderSecretPage() {
   list.innerHTML = "";
 
   pageItems.forEach((item) => {
+    const isPublished = item.published === true;
+
     list.innerHTML += `
       <div class="bg-white/70 rounded-3xl shadow-lg border border-rose-100 p-4">
+        <div class="mb-3">
+          ${publishBadge(isPublished)}
+        </div>
+
         <p class="text-sm text-rose-900/80 line-clamp-6 mb-4">
           ${item.secretMessage || ""}
         </p>
@@ -1179,7 +1300,7 @@ function renderSecretPage() {
           class="publishSecretBtn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold w-full mb-2"
           data-id="${item.id}"
         >
-          Yayımla
+          ${isPublished ? "Yayında" : "Yayınla"}
         </button>
 
         <button
@@ -1200,13 +1321,19 @@ function renderSecretPage() {
       const selected = secretItems.find((x) => x.id === btn.dataset.id);
       if (!selected) return;
 
+      await publishSingleItem("secretMessages", selected.id);
+
       await setDoc(
         doc(db, "siteSettings", "main"),
-        { secretMessage: selected.secretMessage || "" },
+        {
+          secretMessage: selected.secretMessage || "",
+          secretMessageId: selected.id
+        },
         { merge: true }
       );
 
       alert("Gizli mesaj yayımlandı");
+      loadAdminSecrets();
     });
   });
 
@@ -1218,8 +1345,6 @@ function renderSecretPage() {
 
       alert("Gizli mesaj silindi");
       loadAdminSecrets();
-    loadAdminSecretQuestions();
-    loadContactSettings();
     });
   });
 }
@@ -1392,8 +1517,14 @@ function renderSecretQuestionPage() {
   list.innerHTML = "";
 
   pageItems.forEach((item) => {
+    const isPublished = item.published === true;
+
     list.innerHTML += `
       <div class="bg-white/70 rounded-3xl shadow-lg border border-rose-100 p-4">
+        <div class="mb-3">
+          ${publishBadge(isPublished)}
+        </div>
+
         <h3 class="font-bold text-rose-600 text-lg mb-2">
           ${item.secretQuestion || "Sorusu yok"}
         </h3>
@@ -1406,7 +1537,7 @@ function renderSecretQuestionPage() {
           class="activateSecretQuestionBtn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold w-full mb-2"
           data-id="${item.id}"
         >
-          Aktif Yap
+          ${isPublished ? "Yayında" : "Yayınla"}
         </button>
 
         <button
@@ -1431,16 +1562,20 @@ function renderSecretQuestionPage() {
 
       if (!selected) return;
 
+      await publishSingleItem("secretQuestions", selected.id);
+
       await setDoc(
         doc(db, "siteSettings", "main"),
         {
           secretQuestion: selected.secretQuestion || "",
-          secretAnswer: selected.secretAnswer || ""
+          secretAnswer: selected.secretAnswer || "",
+          secretQuestionId: selected.id
         },
         { merge: true }
       );
 
       alert("Bu soru ve cevap aktif yapıldı");
+      loadAdminSecretQuestions();
     });
   });
 
@@ -1452,7 +1587,6 @@ function renderSecretQuestionPage() {
 
       alert("Soru silindi");
       loadAdminSecretQuestions();
-    loadContactSettings();
     });
   });
 }
