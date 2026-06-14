@@ -46,6 +46,18 @@ async function isDuplicateFile(collectionName, file) {
   const fileName = normalizeText(file.name);
   const fileSize = file.size;
 
+  // Yeni sistem: belge ID doğrudan dosya hash'i.
+  const directDoc = await getDoc(doc(db, collectionName, fileHash));
+  if (directDoc.exists()) {
+    return {
+      exists: true,
+      fileHash,
+      fileName: file.name,
+      fileSize
+    };
+  }
+
+  // Eski sistem: random ID ile kaydedilmiş ama fileHash/fileName varsa onu da yakala.
   const snapshot = await getDocs(collection(db, collectionName));
 
   const exists = snapshot.docs.some((docSnap) => {
@@ -81,18 +93,6 @@ async function isDuplicateRecord(collectionName, fields) {
   });
 }
 
-async function isDuplicateSetting(fields) {
-  const snapshot = await getDocs(collection(db, "siteSettings"));
-
-  return snapshot.docs.some((docSnap) => {
-    const data = docSnap.data();
-
-    return Object.keys(fields).every((key) => {
-      return normalizeText(data[key]) === normalizeText(fields[key]);
-    });
-  });
-}
-
 
 let galleryItems = [];
 let galleryPageCurrent = 1;
@@ -115,14 +115,8 @@ let secretQuestionPageCurrent = 1;
 const loginBox = $("loginBox");
 const adminBox = $("adminBox");
 
-let isVideoUploading = false;
 let isPhotoUploading = false;
-let isSavingStory = false;
-let isSavingDate = false;
-let isSavingPlan = false;
-let isSavingSpotify = false;
-let isSavingSecret = false;
-let isSavingSecretQuestion = false;
+let isVideoUploading = false;
 
 /* LOGIN */
 $("loginBtn")?.addEventListener("click", async () => {
@@ -181,9 +175,10 @@ $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
 
   try {
     isVideoUploading = true;
+
     if (btn) {
       btn.disabled = true;
-      btn.textContent = "Kontrol ediliyor...";
+      btn.textContent = "Aynı video kontrol ediliyor...";
     }
 
     const duplicate = await isDuplicateFile("heroVideos", file);
@@ -212,14 +207,14 @@ $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
       return;
     }
 
-    const duplicateAgain = await isDuplicateFile("heroVideos", file);
+    const finalCheck = await getDoc(doc(db, "heroVideos", duplicate.fileHash));
 
-    if (duplicateAgain.exists) {
+    if (finalCheck.exists()) {
       alert("Bu video zaten eklenmiş");
       return;
     }
 
-    await addDoc(collection(db, "heroVideos"), {
+    await setDoc(doc(db, "heroVideos", duplicate.fileHash), {
       videoUrl: data.secure_url,
       fileHash: duplicate.fileHash,
       fileName: duplicate.fileName,
@@ -236,6 +231,7 @@ $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
     alert("Video yükleme hatası: " + error.message);
   } finally {
     isVideoUploading = false;
+
     if (btn) {
       btn.disabled = false;
       btn.textContent = "Video Yükle";
@@ -245,41 +241,25 @@ $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
 
 /* HİKAYE EKLE */
 $("saveStoryBtn")?.addEventListener("click", async () => {
-  if (isSavingStory) return;
-
-  const btn = $("saveStoryBtn");
   const storyTitle = $("storyTitleInput")?.value || "";
   const storyText = $("storyTextInput")?.value || "";
 
-  if (!normalizeText(storyTitle) && !normalizeText(storyText)) {
-    alert("Hikaye başlığı veya metni boş olamaz");
+  if (await isDuplicateRecord("stories", { storyTitle, storyText })) {
+    alert("Bu hikaye zaten eklenmiş");
     return;
   }
 
-  try {
-    isSavingStory = true;
-    if (btn) btn.disabled = true;
+  await addDoc(collection(db, "stories"), {
+    storyTitle,
+    storyText,
+    createdAt: serverTimestamp()
+  });
 
-    if (await isDuplicateRecord("stories", { storyTitle, storyText })) {
-      alert("Bu hikaye zaten eklenmiş");
-      return;
-    }
+  if ($("storyTitleInput")) $("storyTitleInput").value = "";
+  if ($("storyTextInput")) $("storyTextInput").value = "";
 
-    await addDoc(collection(db, "stories"), {
-      storyTitle,
-      storyText,
-      createdAt: serverTimestamp()
-    });
-
-    if ($("storyTitleInput")) $("storyTitleInput").value = "";
-    if ($("storyTextInput")) $("storyTextInput").value = "";
-
-    alert("Hikaye listeye eklendi");
-    loadAdminStories();
-  } finally {
-    isSavingStory = false;
-    if (btn) btn.disabled = false;
-  }
+  alert("Hikaye listeye eklendi");
+  loadAdminStories();
 });
 
 /* FOTOĞRAF YÜKLE */
@@ -294,9 +274,10 @@ $("uploadPhotoBtn")?.addEventListener("click", async () => {
 
   try {
     isPhotoUploading = true;
+
     if (btn) {
       btn.disabled = true;
-      btn.textContent = "Kontrol ediliyor...";
+      btn.textContent = "Aynı fotoğraf kontrol ediliyor...";
     }
 
     const duplicate = await isDuplicateFile("gallery", file);
@@ -325,14 +306,18 @@ $("uploadPhotoBtn")?.addEventListener("click", async () => {
       return;
     }
 
-    const duplicateAgain = await isDuplicateFile("gallery", file);
+    // Upload bitince tekrar kontrol: hızlı çift tıklama / başka sekme ihtimaline karşı.
+    const finalCheck = await getDoc(doc(db, "gallery", duplicate.fileHash));
 
-    if (duplicateAgain.exists) {
+    if (finalCheck.exists()) {
       alert("Bu fotoğraf zaten eklenmiş");
       return;
     }
 
-    await addDoc(collection(db, "gallery"), {
+    // EN ÖNEMLİ KISIM:
+    // addDoc yerine setDoc + belge ID = fileHash.
+    // Böylece aynı fotoğraf aynı ID'ye denk gelir ve tekrar kayıt oluşturamaz.
+    await setDoc(doc(db, "gallery", duplicate.fileHash), {
       title,
       imageUrl: data.secure_url,
       fileHash: duplicate.fileHash,
@@ -351,6 +336,7 @@ $("uploadPhotoBtn")?.addEventListener("click", async () => {
     alert("Fotoğraf yükleme hatası: " + error.message);
   } finally {
     isPhotoUploading = false;
+
     if (btn) {
       btn.disabled = false;
       btn.textContent = "Fotoğraf Yükle";
@@ -360,93 +346,58 @@ $("uploadPhotoBtn")?.addEventListener("click", async () => {
 
 /* TARİH EKLE */
 $("addDateBtn")?.addEventListener("click", async () => {
-  if (isSavingDate) return;
-
-  const btn = $("addDateBtn");
   const title = $("dateTitle")?.value || "";
   const date = $("dateValue")?.value || "";
   const text = $("dateText")?.value || "";
 
-  if (!normalizeText(title) && !normalizeText(date) && !normalizeText(text)) {
-    alert("Tarih bilgisi boş olamaz");
+  if (await isDuplicateRecord("dates", { title, date, text })) {
+    alert("Bu tarih zaten eklenmiş");
     return;
   }
 
-  try {
-    isSavingDate = true;
-    if (btn) btn.disabled = true;
+  await addDoc(collection(db, "dates"), {
+    title,
+    date,
+    text,
+    createdAt: serverTimestamp()
+  });
 
-    if (await isDuplicateRecord("dates", { title, date, text })) {
-      alert("Bu tarih zaten eklenmiş");
-      return;
-    }
+  if ($("dateTitle")) $("dateTitle").value = "";
+  if ($("dateValue")) $("dateValue").value = "";
+  if ($("dateText")) $("dateText").value = "";
 
-    await addDoc(collection(db, "dates"), {
-      title,
-      date,
-      text,
-      createdAt: serverTimestamp()
-    });
-
-    if ($("dateTitle")) $("dateTitle").value = "";
-    if ($("dateValue")) $("dateValue").value = "";
-    if ($("dateText")) $("dateText").value = "";
-
-    alert("Tarih eklendi");
-    loadAdminDates();
-  } finally {
-    isSavingDate = false;
-    if (btn) btn.disabled = false;
-  }
+  alert("Tarih eklendi");
+  loadAdminDates();
 });
 
 /* PLAN EKLE */
 $("addPlanBtn")?.addEventListener("click", async () => {
-  if (isSavingPlan) return;
-
-  const btn = $("addPlanBtn");
   const title = $("planTitle")?.value || "";
   const text = $("planText")?.value || "";
   const type = $("planType")?.value || "near";
 
-  if (!normalizeText(title) && !normalizeText(text)) {
-    alert("Plan başlığı veya açıklaması boş olamaz");
+  if (await isDuplicateRecord("plans", { title, text, type })) {
+    alert("Bu plan zaten eklenmiş");
     return;
   }
 
-  try {
-    isSavingPlan = true;
-    if (btn) btn.disabled = true;
+  await addDoc(collection(db, "plans"), {
+    title,
+    text,
+    type,
+    done: false,
+    createdAt: serverTimestamp()
+  });
 
-    if (await isDuplicateRecord("plans", { title, text, type })) {
-      alert("Bu plan zaten eklenmiş");
-      return;
-    }
+  if ($("planTitle")) $("planTitle").value = "";
+  if ($("planText")) $("planText").value = "";
 
-    await addDoc(collection(db, "plans"), {
-      title,
-      text,
-      type,
-      done: false,
-      createdAt: serverTimestamp()
-    });
-
-    if ($("planTitle")) $("planTitle").value = "";
-    if ($("planText")) $("planText").value = "";
-
-    alert("Plan eklendi");
-    if (typeof loadAdminPlans === "function") loadAdminPlans();
-  } finally {
-    isSavingPlan = false;
-    if (btn) btn.disabled = false;
-  }
+  alert("Plan eklendi");
+  if (typeof loadAdminPlans === "function") loadAdminPlans();
 });
 
 /* SPOTIFY PLAYLIST */
 $("saveSpotifyPlaylistBtn")?.addEventListener("click", async () => {
-  if (isSavingSpotify) return;
-
-  const btn = $("saveSpotifyPlaylistBtn");
   const url = $("spotifyPlaylistUrl")?.value.trim() || "";
 
   if (!url.includes("spotify.com") || !url.includes("playlist")) {
@@ -454,74 +405,40 @@ $("saveSpotifyPlaylistBtn")?.addEventListener("click", async () => {
     return;
   }
 
-  try {
-    isSavingSpotify = true;
-    if (btn) btn.disabled = true;
+  await setDoc(
+    doc(db, "siteSettings", "main"),
+    {
+      spotifyPlaylistUrl: url
+    },
+    { merge: true }
+  );
 
-    if (await isDuplicateSetting({ spotifyPlaylistUrl: url })) {
-      alert("Bu Spotify playlist linki zaten kayıtlı");
-      return;
-    }
-
-    await setDoc(
-      doc(db, "siteSettings", "main"),
-      {
-        spotifyPlaylistUrl: url
-      },
-      { merge: true }
-    );
-
-    if ($("spotifyPlaylistUrl")) $("spotifyPlaylistUrl").value = "";
-
-    alert("Spotify playlist linki kaydedildi");
-  } finally {
-    isSavingSpotify = false;
-    if (btn) btn.disabled = false;
-  }
+  alert("Spotify playlist linki kaydedildi");
 });
 
 /* GİZLİ MESAJ */
 $("saveSecretBtn")?.addEventListener("click", async () => {
-  if (isSavingSecret) return;
-
-  const btn = $("saveSecretBtn");
   const secretMessage = $("secretMessageInput")?.value || "";
 
-  if (!normalizeText(secretMessage)) {
-    alert("Gizli mesaj boş olamaz");
+  if (await isDuplicateRecord("secretMessages", { secretMessage })) {
+    alert("Bu gizli mesaj zaten eklenmiş");
     return;
   }
 
-  try {
-    isSavingSecret = true;
-    if (btn) btn.disabled = true;
+  await addDoc(collection(db, "secretMessages"), {
+    secretMessage,
+    createdAt: serverTimestamp()
+  });
 
-    if (await isDuplicateRecord("secretMessages", { secretMessage })) {
-      alert("Bu gizli mesaj zaten eklenmiş");
-      return;
-    }
+  if ($("secretMessageInput")) $("secretMessageInput").value = "";
 
-    await addDoc(collection(db, "secretMessages"), {
-      secretMessage,
-      createdAt: serverTimestamp()
-    });
-
-    if ($("secretMessageInput")) $("secretMessageInput").value = "";
-
-    alert("Gizli mesaj listeye eklendi");
-    loadAdminSecrets();
-  } finally {
-    isSavingSecret = false;
-    if (btn) btn.disabled = false;
-  }
+  alert("Gizli mesaj listeye eklendi");
+  loadAdminSecrets();
 });
 
 
 /* GİZLİ SORU VE CEVAP */
 $("saveSecretQuestionBtn")?.addEventListener("click", async () => {
-  if (isSavingSecretQuestion) return;
-
-  const btn = $("saveSecretQuestionBtn");
   const question = $("secretQuestionInput")?.value.trim() || "";
   const answer = $("secretAnswerInput")?.value.trim() || "";
 
@@ -530,33 +447,25 @@ $("saveSecretQuestionBtn")?.addEventListener("click", async () => {
     return;
   }
 
-  try {
-    isSavingSecretQuestion = true;
-    if (btn) btn.disabled = true;
-
-    if (await isDuplicateRecord("secretQuestions", {
-      secretQuestion: question,
-      secretAnswer: answer
-    })) {
-      alert("Bu soru ve cevap zaten eklenmiş");
-      return;
-    }
-
-    await addDoc(collection(db, "secretQuestions"), {
-      secretQuestion: question,
-      secretAnswer: answer.toLocaleLowerCase("tr-TR"),
-      createdAt: serverTimestamp()
-    });
-
-    if ($("secretQuestionInput")) $("secretQuestionInput").value = "";
-    if ($("secretAnswerInput")) $("secretAnswerInput").value = "";
-
-    alert("Soru ve cevap listeye eklendi");
-    loadAdminSecretQuestions();
-  } finally {
-    isSavingSecretQuestion = false;
-    if (btn) btn.disabled = false;
+  if (await isDuplicateRecord("secretQuestions", {
+    secretQuestion: question,
+    secretAnswer: answer
+  })) {
+    alert("Bu soru ve cevap zaten eklenmiş");
+    return;
   }
+
+  await addDoc(collection(db, "secretQuestions"), {
+    secretQuestion: question,
+    secretAnswer: answer.toLocaleLowerCase("tr-TR"),
+    createdAt: serverTimestamp()
+  });
+
+  if ($("secretQuestionInput")) $("secretQuestionInput").value = "";
+  if ($("secretAnswerInput")) $("secretAnswerInput").value = "";
+
+  alert("Soru ve cevap listeye eklendi");
+  loadAdminSecretQuestions();
 });
 
 /* ÇIKIŞ */
@@ -1195,19 +1104,11 @@ $("secretNextBtn")?.addEventListener("click", () => {
   }
 });
 $("saveContactBtn")?.addEventListener("click", async () => {
-  const saidInstagram = $("saidInstagramInput")?.value || "";
-  const veraInstagram = $("veraInstagramInput")?.value || "";
-
-  if (await isDuplicateSetting({ saidInstagram, veraInstagram })) {
-    alert("Bu iletişim bilgileri zaten kayıtlı");
-    return;
-  }
-
   await setDoc(
     doc(db, "siteSettings", "main"),
     {
-      saidInstagram,
-      veraInstagram
+      saidInstagram: $("saidInstagramInput")?.value || "",
+      veraInstagram: $("veraInstagramInput")?.value || ""
     },
     { merge: true }
   );
