@@ -193,9 +193,9 @@ $("addPlanBtn")?.addEventListener("click", async () => {
 
 /* SPOTIFY PLAYLIST */
 $("saveSpotifyPlaylistBtn")?.addEventListener("click", async () => {
-  const url = $("spotifyPlaylistUrl")?.value || "";
+  const url = $("spotifyPlaylistUrl")?.value.trim() || "";
 
-  if (!url.includes("open.spotify.com/playlist/")) {
+  if (!url.includes("spotify.com") || !url.includes("playlist")) {
     alert("Geçerli Spotify playlist linki gir");
     return;
   }
@@ -220,6 +220,29 @@ $("saveSecretBtn")?.addEventListener("click", async () => {
 
   alert("Gizli mesaj listeye eklendi");
   loadAdminSecrets();
+});
+
+
+/* GİZLİ SORU VE CEVAP */
+$("saveSecretQuestionBtn")?.addEventListener("click", async () => {
+  const question = $("secretQuestionInput")?.value.trim() || "";
+  const answer = $("secretAnswerInput")?.value.trim() || "";
+
+  if (!question || !answer) {
+    alert("Soru ve cevap boş olamaz");
+    return;
+  }
+
+  await setDoc(
+    doc(db, "siteSettings", "main"),
+    {
+      secretQuestion: question,
+      secretAnswer: answer.toLocaleLowerCase("tr-TR")
+    },
+    { merge: true }
+  );
+
+  alert("Gizli soru ve cevap kaydedildi");
 });
 
 /* ÇIKIŞ */
