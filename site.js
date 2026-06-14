@@ -299,7 +299,7 @@ function getImageOrientation(imageUrl) {
   });
 }
 
-function createGalleryCard(item) {
+function createGalleryCard(item, index) {
   const isLandscape = item.orientation === "landscape";
 
   const imageClass = isLandscape
@@ -307,11 +307,17 @@ function createGalleryCard(item) {
     : "gallery-img gallery-img-vertical";
 
   return `
-    <div class="gallery-item" data-full-src="${item.imageUrl}">
+    <div
+      class="gallery-item"
+      data-gallery-index="${index}"
+      data-full-src="${item.imageUrl}"
+      data-title="${item.title || ""}"
+    >
       <img
         src="${item.imageUrl}"
         alt="${item.title || "Galeri fotoğrafı"}"
         class="${imageClass}"
+        loading="lazy"
       >
       <p>${item.title || ""}</p>
     </div>
@@ -340,9 +346,15 @@ async function loadGallery() {
   const verticalImages = items.filter((item) => item.orientation !== "landscape");
   const landscapeImages = items.filter((item) => item.orientation === "landscape");
 
+  const sortedItems = [...verticalImages, ...landscapeImages];
+
+  window.galleryPreviewItems = sortedItems;
+
+  const verticalCount = verticalImages.length;
+
   container.innerHTML = `
     <div class="gallery-grid-vertical">
-      ${verticalImages.map(createGalleryCard).join("")}
+      ${verticalImages.map((item, index) => createGalleryCard(item, index)).join("")}
     </div>
 
     ${
@@ -350,7 +362,9 @@ async function loadGallery() {
         ? `
           <h3 class="gallery-group-title">Yatay Fotoğraflar</h3>
           <div class="gallery-grid-landscape">
-            ${landscapeImages.map(createGalleryCard).join("")}
+            ${landscapeImages
+              .map((item, index) => createGalleryCard(item, verticalCount + index))
+              .join("")}
           </div>
         `
         : ""
@@ -469,9 +483,200 @@ async function loadMusic() {
   `;
 }
 
-let galleryHoverTimer = null;
 
-function openGalleryPhotoModal(src) {
+
+function addGalleryProfessionalPreviewStyles() {
+  if (document.getElementById("galleryProfessionalPreviewStyles")) return;
+
+  const style = document.createElement("style");
+  style.id = "galleryProfessionalPreviewStyles";
+  style.textContent = `
+    .gallery-item {
+      transition: transform 0.35s ease, box-shadow 0.35s ease;
+      cursor: pointer;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .gallery-item:hover {
+        transform: scale(1.04);
+        z-index: 20;
+        position: relative;
+        box-shadow: 0 22px 50px rgba(0,0,0,0.45);
+      }
+    }
+
+    .gallery-photo-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.78);
+      backdrop-filter: blur(9px);
+      padding: 24px;
+    }
+
+    .gallery-photo-modal.active {
+      display: flex;
+    }
+
+    .gallery-photo-modal-box {
+      position: relative;
+      max-width: 90vw;
+      max-height: 90vh;
+      animation: galleryZoomIn 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .gallery-photo-modal img {
+      max-width: 90vw;
+      max-height: 82vh;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 24px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.25);
+    }
+
+    .gallery-photo-modal-title {
+      color: white;
+      font-size: 16px;
+      font-weight: 800;
+      text-align: center;
+      min-height: 22px;
+    }
+
+    .gallery-photo-modal-counter {
+      color: rgba(255,255,255,0.78);
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .gallery-photo-modal-close,
+    .gallery-photo-modal-prev,
+    .gallery-photo-modal-next {
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #fb7185, #ec4899);
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gallery-photo-modal-close {
+      position: absolute;
+      top: -14px;
+      right: -14px;
+      width: 42px;
+      height: 42px;
+      font-size: 28px;
+      z-index: 3;
+    }
+
+    .gallery-photo-modal-prev,
+    .gallery-photo-modal-next {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 48px;
+      height: 48px;
+      font-size: 34px;
+      z-index: 3;
+    }
+
+    .gallery-photo-modal-prev {
+      left: 24px;
+    }
+
+    .gallery-photo-modal-next {
+      right: 24px;
+    }
+
+    @keyframes galleryZoomIn {
+      from { transform: scale(0.86); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    @media (max-width: 768px) {
+      .gallery-photo-modal {
+        padding: 14px;
+      }
+
+      .gallery-photo-modal img {
+        max-width: 92vw;
+        max-height: 78vh;
+      }
+
+      .gallery-photo-modal-prev,
+      .gallery-photo-modal-next {
+        width: 42px;
+        height: 42px;
+        font-size: 28px;
+      }
+
+      .gallery-photo-modal-prev {
+        left: 10px;
+      }
+
+      .gallery-photo-modal-next {
+        right: 10px;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
+addGalleryProfessionalPreviewStyles();
+
+
+
+let galleryHoverTimer = null;
+let galleryModalOpen = false;
+let currentGalleryIndex = 0;
+
+function getGalleryItems() {
+  return Array.isArray(window.galleryPreviewItems)
+    ? window.galleryPreviewItems
+    : [];
+}
+
+function renderGalleryModalContent() {
+  const items = getGalleryItems();
+  const item = items[currentGalleryIndex];
+
+  if (!item) return;
+
+  const img = document.getElementById("galleryPhotoModalImg");
+  const title = document.getElementById("galleryPhotoModalTitle");
+  const counter = document.getElementById("galleryPhotoModalCounter");
+
+  if (img) img.src = item.imageUrl;
+  if (title) title.textContent = item.title || "";
+  if (counter) counter.textContent = `${currentGalleryIndex + 1} / ${items.length}`;
+}
+
+function openGalleryPhotoModal(indexOrSrc) {
+  clearTimeout(galleryHoverTimer);
+
+  const items = getGalleryItems();
+
+  if (typeof indexOrSrc === "number") {
+    currentGalleryIndex = indexOrSrc;
+  } else {
+    const foundIndex = items.findIndex((item) => item.imageUrl === indexOrSrc);
+    currentGalleryIndex = foundIndex >= 0 ? foundIndex : 0;
+  }
+
   let modal = document.getElementById("galleryPhotoModal");
 
   if (!modal) {
@@ -479,10 +684,14 @@ function openGalleryPhotoModal(src) {
     modal.id = "galleryPhotoModal";
     modal.className = "gallery-photo-modal";
     modal.innerHTML = `
+      <button class="gallery-photo-modal-prev" id="galleryPhotoModalPrev">‹</button>
       <div class="gallery-photo-modal-box">
         <button class="gallery-photo-modal-close" id="galleryPhotoModalClose">×</button>
         <img id="galleryPhotoModalImg" src="" alt="Galeri fotoğrafı">
+        <div class="gallery-photo-modal-title" id="galleryPhotoModalTitle"></div>
+        <div class="gallery-photo-modal-counter" id="galleryPhotoModalCounter"></div>
       </div>
+      <button class="gallery-photo-modal-next" id="galleryPhotoModalNext">›</button>
     `;
 
     document.body.appendChild(modal);
@@ -491,15 +700,28 @@ function openGalleryPhotoModal(src) {
       .getElementById("galleryPhotoModalClose")
       ?.addEventListener("click", closeGalleryPhotoModal);
 
+    document
+      .getElementById("galleryPhotoModalPrev")
+      ?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        showPreviousGalleryPhoto();
+      });
+
+    document
+      .getElementById("galleryPhotoModalNext")
+      ?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        showNextGalleryPhoto();
+      });
+
     modal.addEventListener("click", (e) => {
       if (e.target === modal) closeGalleryPhotoModal();
     });
   }
 
-  const img = document.getElementById("galleryPhotoModalImg");
-  if (img) img.src = src;
-
+  galleryModalOpen = true;
   modal.classList.add("active");
+  renderGalleryModalContent();
 }
 
 function closeGalleryPhotoModal() {
@@ -508,8 +730,30 @@ function closeGalleryPhotoModal() {
   const modal = document.getElementById("galleryPhotoModal");
   const img = document.getElementById("galleryPhotoModalImg");
 
+  galleryModalOpen = false;
+
   if (modal) modal.classList.remove("active");
   if (img) img.src = "";
+}
+
+function showPreviousGalleryPhoto() {
+  const items = getGalleryItems();
+  if (!items.length) return;
+
+  currentGalleryIndex =
+    (currentGalleryIndex - 1 + items.length) % items.length;
+
+  renderGalleryModalContent();
+}
+
+function showNextGalleryPhoto() {
+  const items = getGalleryItems();
+  if (!items.length) return;
+
+  currentGalleryIndex =
+    (currentGalleryIndex + 1) % items.length;
+
+  renderGalleryModalContent();
 }
 
 document.addEventListener("mouseover", (e) => {
@@ -526,10 +770,10 @@ document.addEventListener("mouseover", (e) => {
   clearTimeout(galleryHoverTimer);
 
   galleryHoverTimer = setTimeout(() => {
-    const img = card.querySelector("img");
-    if (!img) return;
+    if (galleryModalOpen) return;
 
-    openGalleryPhotoModal(img.src);
+    const index = Number(card.dataset.galleryIndex || 0);
+    openGalleryPhotoModal(index);
   }, 1500);
 });
 
@@ -544,8 +788,9 @@ document.addEventListener("mouseout", (e) => {
   const isFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   if (!isFinePointer) return;
 
-  clearTimeout(galleryHoverTimer);
-  closeGalleryPhotoModal();
+  if (!galleryModalOpen) {
+    clearTimeout(galleryHoverTimer);
+  }
 });
 
 document.addEventListener("click", (e) => {
@@ -559,11 +804,26 @@ document.addEventListener("click", (e) => {
   const isFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   if (isFinePointer) return;
 
-  const img = card.querySelector("img");
-  if (!img) return;
-
-  openGalleryPhotoModal(img.src);
+  const index = Number(card.dataset.galleryIndex || 0);
+  openGalleryPhotoModal(index);
 });
+
+document.addEventListener("keydown", (e) => {
+  if (!galleryModalOpen) return;
+
+  if (e.key === "Escape") {
+    closeGalleryPhotoModal();
+  }
+
+  if (e.key === "ArrowLeft") {
+    showPreviousGalleryPhoto();
+  }
+
+  if (e.key === "ArrowRight") {
+    showNextGalleryPhoto();
+  }
+});
+
 
 loadSettings();
 loadGallery();
