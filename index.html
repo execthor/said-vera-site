@@ -97,14 +97,7 @@
         radial-gradient(circle at 85% 20%, rgba(225, 29, 72, .25), transparent 34%),
         linear-gradient(135deg, rgba(24, 24, 27, .98), rgba(76, 5, 25, .62), rgba(39, 39, 42, .98));
     }
-    .section-divider {
-      height: 90px;
-      background: linear-gradient(180deg, rgba(255,255,255,0), rgba(244,114,182,.20), rgba(255,255,255,0));
-      pointer-events: none;
-    }
-    .dark .section-divider {
-      background: linear-gradient(180deg, rgba(24,24,27,0), rgba(190,24,93,.28), rgba(24,24,27,0));
-    }
+
 
     /* Daha yoğun kalp animasyonu */
     .heart {
@@ -337,22 +330,7 @@ a {
   transform: translateY(-4px);
 }
 
-/* Bölüm arası renk akışı */
-section::before {
-  content: "";
-  position: absolute;
-  top: -1px;
-  left: 0;
-  width: 100%;
-  height: 140px;
-  background: linear-gradient(
-    to bottom,
-    rgba(255,255,255,0),
-    rgba(255,192,203,0.08),
-    rgba(255,255,255,0)
-  );
-  pointer-events: none;
-}
+/* Bölüm arası ekstra yatay şerit kaldırıldı */
 </style></head>
 <body class="min-h-screen bg-gradient-to-br from-rose-100 via-pink-50 to-white dark:from-zinc-950 dark:via-rose-950 dark:to-zinc-900 text-zinc-800 dark:text-zinc-100">
 <header class="sticky top-0 z-40 border-b border-rose-200/50 dark:border-rose-900/50 bg-gradient-to-r from-rose-200 via-pink-300 to-rose-200 dark:from-zinc-950 dark:via-rose-900 dark:to-zinc-950 backdrop-blur-md shadow-md">
@@ -429,21 +407,18 @@ Planlarımız
 
 </div>
 </section>
-<div class="section-divider"></div>
 <section class="romantic-section scroll-mt-24 py-20 fade-soft" id="story">
 <div class="max-w-6xl mx-auto px-6 text-center">
 <h2 class="text-4xl font-bold mb-12" id="storyTitle">Hikayemiz</h2>
 <div class="glass rounded-3xl p-6 md:p-10 shadow-soft text-left leading-8 text-lg"><p id="storyText"></p></div>
 </div>
 </section>
-<div class="section-divider"></div>
 <section class="romantic-section py-20 fade-soft" id="gallery">
 <div class="max-w-6xl mx-auto px-6 text-center">
 <h2 class="text-4xl font-bold mb-12">🖼️ Galeri</h2>
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 justify-center" id="galleryContainer"></div><p class="text-center text-sm opacity-70 mt-6">Yatay fotoğraflar en altta geniş şekilde sıralanır.</p>
 </div>
 </section>
-<div class="section-divider"></div>
 <section class="romantic-section scroll-mt-24 py-20 fade-soft" id="dates">
 <div class="max-w-6xl mx-auto px-6">
 <div class="flex items-center gap-3 mb-8">
@@ -453,7 +428,6 @@ Planlarımız
 <div class="grid md:grid-cols-3 gap-6" id="datesContainer"></div>
 </div>
 </section>
-<div class="section-divider"></div>
 <section class="romantic-section scroll-mt-24 py-20 fade-soft" id="todo">
 <div class="max-w-6xl mx-auto px-6">
 <div class="flex items-center gap-3 mb-8">
@@ -463,7 +437,6 @@ Planlarımız
 <div class="grid md:grid-cols-2 gap-6" id="plansContainer"></div>
 </div>
 </section>
-<div class="section-divider"></div>
 <section class="romantic-section scroll-mt-24 py-20 fade-soft" id="music">
 <div class="max-w-6xl mx-auto px-6">
 <div class="flex items-center gap-3 mb-8">
@@ -473,7 +446,6 @@ Planlarımız
 <div class="rounded-2xl border border-black/5 dark:border-white/10 bg-rose-100 dark:bg-rose-900/40 overflow-hidden shadow-soft" id="musicContainer"></div>
 </div>
 </section>
-<div class="section-divider"></div>
 <section class="romantic-section scroll-mt-24 py-20 fade-soft" id="contact">
   <div class="max-w-6xl mx-auto px-6">
     <div class="flex items-center gap-3 mb-8">
@@ -514,7 +486,6 @@ Planlarımız
     </div>
   </div>
 </section>
-<div class="section-divider"></div>
 <section class="romantic-section scroll-mt-24 py-20 fade-soft" id="secret">
   <div class="max-w-6xl mx-auto px-6">
     <div class="flex items-center gap-3 mb-8">
