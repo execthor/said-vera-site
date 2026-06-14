@@ -183,6 +183,95 @@ function addGallerySizeStyles() {
         height: 230px;
       }
     }
+
+    .gallery-item {
+      transition: transform 0.35s ease, box-shadow 0.35s ease;
+      cursor: pointer;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .gallery-item:hover {
+        transform: scale(1.04);
+        z-index: 20;
+        position: relative;
+        box-shadow: 0 22px 50px rgba(0,0,0,0.45);
+      }
+    }
+
+    .gallery-photo-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(8px);
+      padding: 24px;
+    }
+
+    .gallery-photo-modal.active {
+      display: flex;
+    }
+
+    .gallery-photo-modal-box {
+      position: relative;
+      max-width: 70vw;
+      max-height: 70vh;
+      animation: galleryZoomIn 0.25s ease;
+    }
+
+    .gallery-photo-modal img {
+      max-width: 70vw;
+      max-height: 70vh;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 24px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.25);
+    }
+
+    .gallery-photo-modal-close {
+      position: absolute;
+      top: -14px;
+      right: -14px;
+      width: 42px;
+      height: 42px;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #fb7185, #ec4899);
+      color: white;
+      font-size: 26px;
+      line-height: 42px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+    }
+
+    @keyframes galleryZoomIn {
+      from {
+        transform: scale(0.86);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .gallery-photo-modal {
+        padding: 16px;
+      }
+
+      .gallery-photo-modal-box,
+      .gallery-photo-modal img {
+        max-width: 70vw;
+        max-height: 70vh;
+      }
+    }
+
   `;
 
   document.head.appendChild(style);
@@ -218,7 +307,7 @@ function createGalleryCard(item) {
     : "gallery-img gallery-img-vertical";
 
   return `
-    <div class="gallery-item">
+    <div class="gallery-item" data-full-src="${item.imageUrl}">
       <img
         src="${item.imageUrl}"
         alt="${item.title || "Galeri fotoğrafı"}"
@@ -379,6 +468,103 @@ async function loadMusic() {
     </iframe>
   `;
 }
+
+let galleryHoverTimer = null;
+
+function openGalleryPhotoModal(src) {
+  let modal = document.getElementById("galleryPhotoModal");
+
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "galleryPhotoModal";
+    modal.className = "gallery-photo-modal";
+    modal.innerHTML = `
+      <div class="gallery-photo-modal-box">
+        <button class="gallery-photo-modal-close" id="galleryPhotoModalClose">×</button>
+        <img id="galleryPhotoModalImg" src="" alt="Galeri fotoğrafı">
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document
+      .getElementById("galleryPhotoModalClose")
+      ?.addEventListener("click", closeGalleryPhotoModal);
+
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeGalleryPhotoModal();
+    });
+  }
+
+  const img = document.getElementById("galleryPhotoModalImg");
+  if (img) img.src = src;
+
+  modal.classList.add("active");
+}
+
+function closeGalleryPhotoModal() {
+  clearTimeout(galleryHoverTimer);
+
+  const modal = document.getElementById("galleryPhotoModal");
+  const img = document.getElementById("galleryPhotoModalImg");
+
+  if (modal) modal.classList.remove("active");
+  if (img) img.src = "";
+}
+
+document.addEventListener("mouseover", (e) => {
+  const target = e.target;
+
+  if (!(target instanceof Element)) return;
+
+  const card = target.closest(".gallery-item");
+  if (!card) return;
+
+  const isFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  if (!isFinePointer) return;
+
+  clearTimeout(galleryHoverTimer);
+
+  galleryHoverTimer = setTimeout(() => {
+    const img = card.querySelector("img");
+    if (!img) return;
+
+    openGalleryPhotoModal(img.src);
+  }, 1000);
+});
+
+document.addEventListener("mouseout", (e) => {
+  const target = e.target;
+
+  if (!(target instanceof Element)) return;
+
+  const card = target.closest(".gallery-item");
+  if (!card) return;
+
+  const isFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  if (!isFinePointer) return;
+
+  clearTimeout(galleryHoverTimer);
+  closeGalleryPhotoModal();
+});
+
+document.addEventListener("click", (e) => {
+  const target = e.target;
+
+  if (!(target instanceof Element)) return;
+
+  const card = target.closest(".gallery-item");
+  if (!card) return;
+
+  const isFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  if (isFinePointer) return;
+
+  const img = card.querySelector("img");
+  if (!img) return;
+
+  openGalleryPhotoModal(img.src);
+});
+
 loadSettings();
 loadGallery();
 loadDates();
