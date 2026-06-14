@@ -575,7 +575,7 @@ Planlarımız
       const secretMessage = document.getElementById('secretMessage');
       if (secretBtn && secretPass && secretMessage) {
         secretBtn.addEventListener('click', () => {
-       if (secretPass.value.trim().toLocaleLowerCase('tr-TR') === 'afyon') {
+       if (secretPass.value.trim().toLocaleLowerCase("tr-TR") === (window.savedSecretAnswer || "afyon")) {
   secretMessage.textContent = window.savedSecretMessage || "Gizli mesaj bulunamadı.";
   secretMessage.classList.remove('hidden');
 } else {
