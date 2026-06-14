@@ -288,6 +288,7 @@ $("addPlanBtn")?.addEventListener("click", async () => {
     text,
     type,
     done: false,
+    published: false,
     createdAt: serverTimestamp()
   });
 
@@ -1010,8 +1011,30 @@ function renderPlanPage() {
   const dreamPlans = planItems.filter((item) => item.type === "dream");
 
   function createPlanCard(item) {
+    const isPublished = item.published === true;
+
     return `
       <div class="bg-white/70 rounded-3xl shadow-lg border border-rose-100 p-4">
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <span class="text-xs font-black px-3 py-1 rounded-full ${
+            isPublished
+              ? "bg-emerald-100 text-emerald-700"
+              : "bg-rose-100 text-rose-700"
+          }">
+            ${isPublished ? "Yayında" : "Yayında Değil"}
+          </span>
+
+          <label class="flex items-center gap-2 text-sm font-bold text-rose-700 cursor-pointer">
+            <input
+              type="checkbox"
+              class="publishPlanCheck w-5 h-5 accent-rose-500"
+              data-id="${item.id}"
+              ${isPublished ? "checked" : ""}
+            >
+            Yayınla
+          </label>
+        </div>
+
         <h3 class="font-bold text-rose-600 text-lg mb-2">
           ${item.title || "Başlıksız"}
         </h3>
@@ -1058,9 +1081,28 @@ function renderPlanPage() {
     </div>
   `;
 
+  const publishedCount = planItems.filter((item) => item.published === true).length;
+
   if (info) {
-    info.textContent = `Plan: ${nearPlans.length} / Hayal: ${dreamPlans.length}`;
+    info.textContent = `Toplam: ${planItems.length} / Yayında: ${publishedCount}`;
   }
+
+  document.querySelectorAll(".publishPlanCheck").forEach((check) => {
+    check.addEventListener("change", async () => {
+      const id = check.dataset.id;
+      if (!id) return;
+
+      await setDoc(
+        doc(db, "plans", id),
+        {
+          published: check.checked
+        },
+        { merge: true }
+      );
+
+      loadAdminPlans();
+    });
+  });
 
   document.querySelectorAll(".deletePlanBtn").forEach((btn) => {
     btn.addEventListener("click", async () => {
