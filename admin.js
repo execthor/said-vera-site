@@ -22,6 +22,44 @@ import {
 const $ = (id) => document.getElementById(id);
 const pageSize = 25;
 
+function normalizeText(value) {
+  return (value || "")
+    .toString()
+    .trim()
+    .toLocaleLowerCase("tr-TR")
+    .replace(/\s+/g, " ");
+}
+
+async function fileToHash(file) {
+  const buffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function isDuplicateFile(collectionName, fileHash) {
+  const snapshot = await getDocs(collection(db, collectionName));
+
+  return snapshot.docs.some((docSnap) => {
+    return docSnap.data().fileHash === fileHash;
+  });
+}
+
+async function isDuplicateRecord(collectionName, fields) {
+  const snapshot = await getDocs(collection(db, collectionName));
+
+  return snapshot.docs.some((docSnap) => {
+    const data = docSnap.data();
+
+    return Object.keys(fields).every((key) => {
+      return normalizeText(data[key]) === normalizeText(fields[key]);
+    });
+  });
+}
+
+
 let galleryItems = [];
 let galleryPageCurrent = 1;
 
@@ -33,9 +71,6 @@ let heroVideoPageCurrent = 1;
 
 let dateItems = [];
 let datePageCurrent = 1;
-
-let planItems = [];
-let planPageCurrent = 1;
 
 let secretItems = [];
 let secretPageCurrent = 1;
@@ -68,7 +103,6 @@ onAuthStateChanged(auth, (user) => {
     loadAdminStories();
     loadAdminHeroVideos();
     loadAdminDates();
-    loadAdminPlans();
     loadAdminSecrets();
     loadAdminSecretQuestions();
   }
@@ -99,6 +133,13 @@ $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
 
   if (!file) return alert("Video seç");
 
+  const fileHash = await fileToHash(file);
+
+  if (await isDuplicateFile("heroVideos", fileHash)) {
+    alert("Bu video zaten eklenmiş");
+    return;
+  }
+
   alert("Video yükleniyor...");
 
   const formData = new FormData();
@@ -119,8 +160,11 @@ $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
 
   await addDoc(collection(db, "heroVideos"), {
     videoUrl: data.secure_url,
+    fileHash,
     createdAt: serverTimestamp()
   });
+
+  if ($("heroVideoFile")) $("heroVideoFile").value = "";
 
   alert("Video arşive eklendi");
   loadAdminHeroVideos();
@@ -128,11 +172,22 @@ $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
 
 /* HİKAYE EKLE */
 $("saveStoryBtn")?.addEventListener("click", async () => {
+  const storyTitle = $("storyTitleInput")?.value || "";
+  const storyText = $("storyTextInput")?.value || "";
+
+  if (await isDuplicateRecord("stories", { storyTitle, storyText })) {
+    alert("Bu hikaye zaten eklenmiş");
+    return;
+  }
+
   await addDoc(collection(db, "stories"), {
-    storyTitle: $("storyTitleInput")?.value || "",
-    storyText: $("storyTextInput")?.value || "",
+    storyTitle,
+    storyText,
     createdAt: serverTimestamp()
   });
+
+  if ($("storyTitleInput")) $("storyTitleInput").value = "";
+  if ($("storyTextInput")) $("storyTextInput").value = "";
 
   alert("Hikaye listeye eklendi");
   loadAdminStories();
@@ -144,6 +199,13 @@ $("uploadPhotoBtn")?.addEventListener("click", async () => {
   const title = $("photoTitle")?.value || "";
 
   if (!file) return alert("Fotoğraf seç");
+
+  const fileHash = await fileToHash(file);
+
+  if (await isDuplicateFile("gallery", fileHash)) {
+    alert("Bu fotoğraf zaten eklenmiş");
+    return;
+  }
 
   alert("Fotoğraf yükleniyor...");
 
@@ -166,8 +228,12 @@ $("uploadPhotoBtn")?.addEventListener("click", async () => {
   await addDoc(collection(db, "gallery"), {
     title,
     imageUrl: data.secure_url,
+    fileHash,
     createdAt: serverTimestamp()
   });
+
+  if ($("photoFile")) $("photoFile").value = "";
+  if ($("photoTitle")) $("photoTitle").value = "";
 
   alert("Fotoğraf yüklendi");
   loadAdminGallery();
@@ -175,12 +241,25 @@ $("uploadPhotoBtn")?.addEventListener("click", async () => {
 
 /* TARİH EKLE */
 $("addDateBtn")?.addEventListener("click", async () => {
+  const title = $("dateTitle")?.value || "";
+  const date = $("dateValue")?.value || "";
+  const text = $("dateText")?.value || "";
+
+  if (await isDuplicateRecord("dates", { title, date, text })) {
+    alert("Bu tarih zaten eklenmiş");
+    return;
+  }
+
   await addDoc(collection(db, "dates"), {
-    title: $("dateTitle")?.value || "",
-    date: $("dateValue")?.value || "",
-    text: $("dateText")?.value || "",
+    title,
+    date,
+    text,
     createdAt: serverTimestamp()
   });
+
+  if ($("dateTitle")) $("dateTitle").value = "";
+  if ($("dateValue")) $("dateValue").value = "";
+  if ($("dateText")) $("dateText").value = "";
 
   alert("Tarih eklendi");
   loadAdminDates();
@@ -188,10 +267,19 @@ $("addDateBtn")?.addEventListener("click", async () => {
 
 /* PLAN EKLE */
 $("addPlanBtn")?.addEventListener("click", async () => {
+  const title = $("planTitle")?.value || "";
+  const text = $("planText")?.value || "";
+  const type = $("planType")?.value || "near";
+
+  if (await isDuplicateRecord("plans", { title, text, type })) {
+    alert("Bu plan zaten eklenmiş");
+    return;
+  }
+
   await addDoc(collection(db, "plans"), {
-    title: $("planTitle")?.value || "",
-    text: $("planText")?.value || "",
-    type: $("planType")?.value || "near",
+    title,
+    text,
+    type,
     done: false,
     createdAt: serverTimestamp()
   });
@@ -200,7 +288,7 @@ $("addPlanBtn")?.addEventListener("click", async () => {
   if ($("planText")) $("planText").value = "";
 
   alert("Plan eklendi");
-  loadAdminPlans();
+  if (typeof loadAdminPlans === "function") loadAdminPlans();
 });
 
 /* SPOTIFY PLAYLIST */
@@ -225,10 +313,19 @@ $("saveSpotifyPlaylistBtn")?.addEventListener("click", async () => {
 
 /* GİZLİ MESAJ */
 $("saveSecretBtn")?.addEventListener("click", async () => {
+  const secretMessage = $("secretMessageInput")?.value || "";
+
+  if (await isDuplicateRecord("secretMessages", { secretMessage })) {
+    alert("Bu gizli mesaj zaten eklenmiş");
+    return;
+  }
+
   await addDoc(collection(db, "secretMessages"), {
-    secretMessage: $("secretMessageInput")?.value || "",
+    secretMessage,
     createdAt: serverTimestamp()
   });
+
+  if ($("secretMessageInput")) $("secretMessageInput").value = "";
 
   alert("Gizli mesaj listeye eklendi");
   loadAdminSecrets();
@@ -245,11 +342,22 @@ $("saveSecretQuestionBtn")?.addEventListener("click", async () => {
     return;
   }
 
+  if (await isDuplicateRecord("secretQuestions", {
+    secretQuestion: question,
+    secretAnswer: answer
+  })) {
+    alert("Bu soru ve cevap zaten eklenmiş");
+    return;
+  }
+
   await addDoc(collection(db, "secretQuestions"), {
     secretQuestion: question,
     secretAnswer: answer.toLocaleLowerCase("tr-TR"),
     createdAt: serverTimestamp()
   });
+
+  if ($("secretQuestionInput")) $("secretQuestionInput").value = "";
+  if ($("secretAnswerInput")) $("secretAnswerInput").value = "";
 
   alert("Soru ve cevap listeye eklendi");
   loadAdminSecretQuestions();
@@ -789,94 +897,6 @@ $("datesNextBtn")?.addEventListener("click", () => {
     renderDatePage();
   }
 });
-
-/* PLANLAR */
-async function loadAdminPlans() {
-  const list = $("plansAdminList");
-  if (!list) return;
-
-  const q = query(collection(db, "plans"), orderBy("createdAt", "desc"));
-  const snapshot = await getDocs(q);
-
-  planItems = [];
-
-  snapshot.forEach((docSnap) => {
-    planItems.push({
-      id: docSnap.id,
-      ...docSnap.data()
-    });
-  });
-
-  renderPlanPage();
-}
-
-function renderPlanPage() {
-  const list = $("plansAdminList");
-  const info = $("plansPageInfo");
-
-  if (!list) return;
-
-  const start = (planPageCurrent - 1) * pageSize;
-  const end = start + pageSize;
-  const pageItems = planItems.slice(start, end);
-
-  list.innerHTML = "";
-
-  pageItems.forEach((item) => {
-    const typeText = item.type === "dream" ? "Hayal Listesi" : "Yakın Planlar";
-
-    list.innerHTML += `
-      <div class="data-card">
-        <div class="data-card-body">
-          <h3 class="data-card-title">${item.title || "Başlıksız"}</h3>
-          <p class="data-card-text mb-2">${item.text || ""}</p>
-          <p class="text-xs font-bold text-rose-500 mb-3">${typeText}</p>
-
-          <button
-            class="deletePlanBtn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold w-full"
-            data-id="${item.id}"
-          >
-            Sil
-          </button>
-        </div>
-      </div>
-    `;
-  });
-
-  const totalPages = Math.ceil(planItems.length / pageSize) || 1;
-
-  if (info) {
-    info.textContent = `${planPageCurrent} / ${totalPages}`;
-  }
-
-  document.querySelectorAll(".deletePlanBtn").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      if (!confirm("Bu plan silinsin mi?")) return;
-
-      await deleteDoc(doc(db, "plans", btn.dataset.id));
-
-      alert("Plan silindi");
-      loadAdminPlans();
-    });
-  });
-}
-
-$("plansPrevBtn")?.addEventListener("click", () => {
-  if (planPageCurrent > 1) {
-    planPageCurrent--;
-    renderPlanPage();
-  }
-});
-
-$("plansNextBtn")?.addEventListener("click", () => {
-  const totalPages = Math.ceil(planItems.length / pageSize) || 1;
-
-  if (planPageCurrent < totalPages) {
-    planPageCurrent++;
-    renderPlanPage();
-  }
-});
-
 async function loadAdminSecrets() {
   const list = $("secretAdminList");
   if (!list) return;
