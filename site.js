@@ -1,15 +1,893 @@
-import { db } from "./firebase.js";
+
+import {
+  auth,
+  db } from "./firebase.js";
+
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
   collection,
+  addDoc,
   getDocs,
   query,
   orderBy,
   doc,
-  getDoc
+  getDoc,
+  setDoc,
+  deleteDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-function formatDateTR(dateString) {
+const $ = (id) => document.getElementById(id);
+const pageSize = 25;
+
+function normalizeText(value) {
+  return (value || "")
+    .toString()
+    .trim()
+    .toLocaleLowerCase("tr-TR")
+    .replace(/\s+/g, " ");
+}
+
+async function fileToHash(file) {
+  const buffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function isDuplicateFile(collectionName, fileHash) {
+  const snapshot = await getDocs(collection(db, collectionName));
+
+  return snapshot.docs.some((docSnap) => {
+    return docSnap.data().fileHash === fileHash;
+  });
+}
+
+async function isDuplicateRecord(collectionName, fields) {
+  const snapshot = await getDocs(collection(db, collectionName));
+
+  return snapshot.docs.some((docSnap) => {
+    const data = docSnap.data();
+
+    return Object.keys(fields).every((key) => {
+      return normalizeText(data[key]) === normalizeText(fields[key]);
+    });
+  });
+}
+
+
+let galleryItems = [];
+let galleryPageCurrent = 1;
+
+let storyItems = [];
+let storyPageCurrent = 1;
+
+let heroVideoItems = [];
+let heroVideoPageCurrent = 1;
+
+let dateItems = [];
+let datePageCurrent = 1;
+
+let planItems = [];
+let planPageCurrent = 1;
+
+let secretItems = [];
+let secretPageCurrent = 1;
+
+let secretQuestionItems = [];
+let secretQuestionPageCurrent = 1;
+
+const loginBox = $("loginBox");
+const adminBox = $("adminBox");
+
+/* LOGIN */
+$("loginBtn")?.addEventListener("click", async () => {
+  try {
+    await signInWithEmailAndPassword(
+      auth,
+      $("email")?.value || "",
+      $("password")?.value || ""
+    );
+  } catch (error) {
+    alert("Giriş başarısız: " + error.message);
+  }
+});
+
+onAuthStateChanged(auth, (user) => {
+  if (loginBox) loginBox.style.display = user ? "none" : "block";
+  if (adminBox) adminBox.style.display = user ? "block" : "none";
+
+  if (user) {
+    loadAdminGallery();
+    loadAdminStories();
+    loadAdminHeroVideos();
+    loadAdminDates();
+    loadAdminSecrets();
+    loadAdminSecretQuestions();
+    loadContactSettings();
+  }
+});
+
+/* SAYFA GEÇİŞ */
+document.querySelectorAll("[data-page]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const target = btn.dataset.page;
+
+    document.querySelectorAll(".admin-page").forEach((page) => {
+      page.classList.add("hidden");
+    });
+
+    document.getElementById(target)?.classList.remove("hidden");
+
+    document.querySelectorAll(".menu-btn").forEach((b) => {
+      b.classList.remove("active-menu");
+    });
+
+    btn.classList.add("active-menu");
+  });
+});
+
+/* VİDEO YÜKLE */
+$("uploadHeroVideoBtn")?.addEventListener("click", async () => {
+  const file = $("heroVideoFile")?.files[0];
+
+  if (!file) return alert("Video seç");
+
+  const fileHash = await fileToHash(file);
+
+  if (await isDuplicateFile("heroVideos", fileHash)) {
+    alert("Bu video zaten eklenmiş");
+    return;
+  }
+
+  alert("Video yükleniyor...");
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "saidvera_video");
+
+  const response = await fetch(
+    "https://api.cloudinary.com/v1_1/dosgbutzh/video/upload",
+    { method: "POST", body: formData }
+  );
+
+  const data = await response.json();
+
+  if (!data.secure_url) {
+    console.log(data);
+    return alert("Video yüklenemedi");
+  }
+
+  await addDoc(collection(db, "heroVideos"), {
+    videoUrl: data.secure_url,
+    fileHash,
+    createdAt: serverTimestamp()
+  });
+
+  if ($("heroVideoFile")) $("heroVideoFile").value = "";
+
+  alert("Video arşive eklendi");
+  loadAdminHeroVideos();
+});
+
+/* HİKAYE EKLE */
+$("saveStoryBtn")?.addEventListener("click", async () => {
+  const storyTitle = $("storyTitleInput")?.value || "";
+  const storyText = $("storyTextInput")?.value || "";
+
+  if (await isDuplicateRecord("stories", { storyTitle, storyText })) {
+    alert("Bu hikaye zaten eklenmiş");
+    return;
+  }
+
+  await addDoc(collection(db, "stories"), {
+    storyTitle,
+    storyText,
+    createdAt: serverTimestamp()
+  });
+
+  if ($("storyTitleInput")) $("storyTitleInput").value = "";
+  if ($("storyTextInput")) $("storyTextInput").value = "";
+
+  alert("Hikaye listeye eklendi");
+  loadAdminStories();
+});
+
+/* FOTOĞRAF YÜKLE */
+$("uploadPhotoBtn")?.addEventListener("click", async () => {
+  const file = $("photoFile")?.files[0];
+  const title = $("photoTitle")?.value || "";
+
+  if (!file) return alert("Fotoğraf seç");
+
+  const fileHash = await fileToHash(file);
+
+  if (await isDuplicateFile("gallery", fileHash)) {
+    alert("Bu fotoğraf zaten eklenmiş");
+    return;
+  }
+
+  alert("Fotoğraf yükleniyor...");
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "saidvera");
+
+  const response = await fetch(
+    "https://api.cloudinary.com/v1_1/dosgbutzh/image/upload",
+    { method: "POST", body: formData }
+  );
+
+  const data = await response.json();
+
+  if (!data.secure_url) {
+    console.log(data);
+    return alert("Fotoğraf yüklenemedi");
+  }
+
+  await addDoc(collection(db, "gallery"), {
+    title,
+    imageUrl: data.secure_url,
+    fileHash,
+    createdAt: serverTimestamp()
+  });
+
+  if ($("photoFile")) $("photoFile").value = "";
+  if ($("photoTitle")) $("photoTitle").value = "";
+
+  alert("Fotoğraf yüklendi");
+  loadAdminGallery();
+});
+
+/* TARİH EKLE */
+$("addDateBtn")?.addEventListener("click", async () => {
+  const title = $("dateTitle")?.value || "";
+  const date = $("dateValue")?.value || "";
+  const text = $("dateText")?.value || "";
+
+  if (await isDuplicateRecord("dates", { title, date, text })) {
+    alert("Bu tarih zaten eklenmiş");
+    return;
+  }
+
+  await addDoc(collection(db, "dates"), {
+    title,
+    date,
+    text,
+    createdAt: serverTimestamp()
+  });
+
+  if ($("dateTitle")) $("dateTitle").value = "";
+  if ($("dateValue")) $("dateValue").value = "";
+  if ($("dateText")) $("dateText").value = "";
+
+  alert("Tarih eklendi");
+  loadAdminDates();
+});
+
+/* PLAN EKLE */
+$("addPlanBtn")?.addEventListener("click", async () => {
+  const title = $("planTitle")?.value || "";
+  const text = $("planText")?.value || "";
+  const type = $("planType")?.value || "near";
+
+  if (await isDuplicateRecord("plans", { title, text, type })) {
+    alert("Bu plan zaten eklenmiş");
+    return;
+  }
+
+  await addDoc(collection(db, "plans"), {
+    title,
+    text,
+    type,
+    done: false,
+    published: false,
+    createdAt: serverTimestamp()
+  });
+
+  if ($("planTitle")) $("planTitle").value = "";
+  if ($("planText")) $("planText").value = "";
+
+  alert("Plan eklendi");
+  if (typeof loadAdminPlans === "function") loadAdminPlans();
+});
+
+/* SPOTIFY PLAYLIST */
+$("saveSpotifyPlaylistBtn")?.addEventListener("click", async () => {
+  const url = $("spotifyPlaylistUrl")?.value.trim() || "";
+
+  if (!url.includes("spotify.com") || !url.includes("playlist")) {
+    alert("Geçerli Spotify playlist linki gir");
+    return;
+  }
+
+  await setDoc(
+    doc(db, "siteSettings", "main"),
+    {
+      spotifyPlaylistUrl: url
+    },
+    { merge: true }
+  );
+
+  alert("Spotify playlist linki kaydedildi");
+});
+
+/* GİZLİ MESAJ */
+$("saveSecretBtn")?.addEventListener("click", async () => {
+  const secretMessage = $("secretMessageInput")?.value || "";
+
+  if (await isDuplicateRecord("secretMessages", { secretMessage })) {
+    alert("Bu gizli mesaj zaten eklenmiş");
+    return;
+  }
+
+  await addDoc(collection(db, "secretMessages"), {
+    secretMessage,
+    createdAt: serverTimestamp()
+  });
+
+  if ($("secretMessageInput")) $("secretMessageInput").value = "";
+
+  alert("Gizli mesaj listeye eklendi");
+  loadAdminSecrets();
+});
+
+
+/* GİZLİ SORU VE CEVAP */
+$("saveSecretQuestionBtn")?.addEventListener("click", async () => {
+  const question = $("secretQuestionInput")?.value.trim() || "";
+  const answer = $("secretAnswerInput")?.value.trim() || "";
+
+  if (!question || !answer) {
+    alert("Soru ve cevap boş olamaz");
+    return;
+  }
+
+  if (await isDuplicateRecord("secretQuestions", {
+    secretQuestion: question,
+    secretAnswer: answer
+  })) {
+    alert("Bu soru ve cevap zaten eklenmiş");
+    return;
+  }
+
+  await addDoc(collection(db, "secretQuestions"), {
+    secretQuestion: question,
+    secretAnswer: answer.toLocaleLowerCase("tr-TR"),
+    createdAt: serverTimestamp()
+  });
+
+  if ($("secretQuestionInput")) $("secretQuestionInput").value = "";
+  if ($("secretAnswerInput")) $("secretAnswerInput").value = "";
+
+  alert("Soru ve cevap listeye eklendi");
+  loadAdminSecretQuestions();
+});
+
+/* ÇIKIŞ */
+$("logoutBtn")?.addEventListener("click", async () => {
+  await signOut(auth);
+});
+
+/* GALERİ LİSTE */
+async function loadAdminGallery() {
+  const list = $("galleryAdminList");
+  if (!list) return;
+
+  const q = query(collection(db, "gallery"), orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
+
+  galleryItems = [];
+
+  snapshot.forEach((docSnap) => {
+    galleryItems.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  renderGalleryPage();
+}
+
+function renderGalleryPage() {
+  const list = $("galleryAdminList");
+  const info = $("galleryPageInfo");
+
+  if (!list) return;
+
+  const start = (galleryPageCurrent - 1) * pageSize;
+  const end = start + pageSize;
+  const pageItems = galleryItems.slice(start, end);
+
+  list.innerHTML = "";
+
+  pageItems.forEach((item) => {
+    list.innerHTML += `
+      <div class="relative bg-white/70 rounded-3xl overflow-hidden shadow-lg border border-rose-100 group">
+        <img 
+          src="${item.imageUrl}" 
+          class="admin-gallery-img w-full h-40 object-cover cursor-pointer"
+          alt="${item.title || "Galeri fotoğrafı"}"
+        >
+
+        <div class="p-4">
+          <h3 class="font-bold text-rose-600 text-lg mb-3">
+            ${item.title || "Başlıksız"}
+          </h3>
+
+          <button 
+            class="deleteGalleryBtn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold"
+            data-id="${item.id}"
+          >
+            Sil
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  const totalPages = Math.ceil(galleryItems.length / pageSize) || 1;
+  if (info) info.textContent = `${galleryPageCurrent} / ${totalPages}`;
+
+  document.querySelectorAll(".deleteGalleryBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id;
+
+      if (!confirm("Bu fotoğraf silinsin mi?")) return;
+
+      await deleteDoc(doc(db, "gallery", id));
+
+      alert("Fotoğraf silindi");
+      loadAdminGallery();
+    });
+  });
+}
+
+$("galleryPrevBtn")?.addEventListener("click", () => {
+  if (galleryPageCurrent > 1) {
+    galleryPageCurrent--;
+    renderGalleryPage();
+  }
+});
+
+$("galleryNextBtn")?.addEventListener("click", () => {
+  const totalPages = Math.ceil(galleryItems.length / pageSize) || 1;
+
+  if (galleryPageCurrent < totalPages) {
+    galleryPageCurrent++;
+    renderGalleryPage();
+  }
+});
+
+
+/* FOTOĞRAF HOVER - STABİL ADMIN */
+let adminPhotoHoverTimer = null;
+let adminPhotoPreviewOpen = false;
+
+function openAdminPhotoPreview(src) {
+  clearTimeout(adminPhotoHoverTimer);
+
+  let preview = document.getElementById("adminPhotoPreview");
+
+  if (!preview) {
+    preview = document.createElement("div");
+    preview.id = "adminPhotoPreview";
+    preview.innerHTML = `
+      <div class="admin-photo-preview-box">
+        <button id="adminPhotoPreviewClose">×</button>
+        <img id="adminPhotoPreviewImg" src="" alt="Fotoğraf önizleme">
+      </div>
+    `;
+
+    document.body.appendChild(preview);
+
+    document
+      .getElementById("adminPhotoPreviewClose")
+      ?.addEventListener("click", closeAdminPhotoPreview);
+
+    preview.addEventListener("click", (e) => {
+      if (e.target === preview) closeAdminPhotoPreview();
+    });
+  }
+
+  const img = document.getElementById("adminPhotoPreviewImg");
+  if (img) img.src = src;
+
+  adminPhotoPreviewOpen = true;
+  preview.classList.add("active");
+}
+
+function closeAdminPhotoPreview() {
+  clearTimeout(adminPhotoHoverTimer);
+
+  const preview = document.getElementById("adminPhotoPreview");
+  const img = document.getElementById("adminPhotoPreviewImg");
+
+  adminPhotoPreviewOpen = false;
+
+  if (preview) preview.classList.remove("active");
+  if (img) img.src = "";
+}
+
+document.addEventListener("pointerenter", (e) => {
+  const target = e.target;
+
+  if (!(target instanceof Element)) return;
+
+  const img = target.closest(".admin-gallery-img");
+  if (!img) return;
+
+  const isFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  if (!isFinePointer) return;
+
+  clearTimeout(adminPhotoHoverTimer);
+
+  adminPhotoHoverTimer = setTimeout(() => {
+    if (adminPhotoPreviewOpen) return;
+    openAdminPhotoPreview(img.src);
+  }, 1500);
+}, true);
+
+document.addEventListener("pointerleave", (e) => {
+  const target = e.target;
+
+  if (!(target instanceof Element)) return;
+
+  const img = target.closest(".admin-gallery-img");
+  if (!img) return;
+
+  if (!adminPhotoPreviewOpen) {
+    clearTimeout(adminPhotoHoverTimer);
+  }
+}, true);
+
+document.addEventListener("click", (e) => {
+  const target = e.target;
+
+  if (!(target instanceof Element)) return;
+
+  if (target.closest("#adminPhotoPreview")) return;
+
+  const img = target.closest(".admin-gallery-img");
+  if (!img) return;
+
+  const isFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  if (isFinePointer) return;
+
+  openAdminPhotoPreview(img.src);
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    closeAdminPhotoPreview();
+  }
+});
+
+
+/* HİKAYE LİSTE */
+async function loadAdminStories() {
+  const list = $("storyAdminList");
+  if (!list) return;
+
+  const q = query(collection(db, "stories"), orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
+
+  storyItems = [];
+
+  snapshot.forEach((docSnap) => {
+    storyItems.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  renderStoryPage();
+}
+
+function renderStoryPage() {
+  const list = $("storyAdminList");
+  const info = $("storyPageInfo");
+
+  if (!list) return;
+
+  const start = (storyPageCurrent - 1) * pageSize;
+  const end = start + pageSize;
+  const pageItems = storyItems.slice(start, end);
+
+  list.innerHTML = "";
+
+  pageItems.forEach((item) => {
+    list.innerHTML += `
+      <div class="bg-white/70 rounded-3xl shadow-lg border border-rose-100 p-4">
+        <h3 class="font-bold text-rose-600 text-lg mb-2">
+          ${item.storyTitle || "Başlıksız"}
+        </h3>
+
+        <p class="text-sm text-rose-900/80 line-clamp-5 mb-4">
+          ${item.storyText || ""}
+        </p>
+
+        <button
+          class="selectStoryBtn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold w-full mb-2"
+          data-id="${item.id}"
+        >
+          Seç / Yayınla
+        </button>
+
+        <button
+          class="deleteStoryBtn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold w-full"
+          data-id="${item.id}"
+        >
+          Sil
+        </button>
+      </div>
+    `;
+  });
+
+  const totalPages = Math.ceil(storyItems.length / pageSize) || 1;
+  if (info) info.textContent = `${storyPageCurrent} / ${totalPages}`;
+
+  document.querySelectorAll(".selectStoryBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const selected = storyItems.find((x) => x.id === btn.dataset.id);
+      if (!selected) return;
+
+      await setDoc(
+        doc(db, "siteSettings", "main"),
+        {
+          storyTitle: selected.storyTitle || "",
+          storyText: selected.storyText || ""
+        },
+        { merge: true }
+      );
+
+      alert("Bu hikaye ana sitede yayınlandı");
+    });
+  });
+
+  document.querySelectorAll(".deleteStoryBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id;
+
+      if (!id) return;
+      if (!confirm("Bu hikaye silinsin mi?")) return;
+
+      await deleteDoc(doc(db, "stories", id));
+
+      alert("Hikaye silindi");
+      loadAdminStories();
+    });
+  });
+}
+
+$("storyPrevBtn")?.addEventListener("click", () => {
+  if (storyPageCurrent > 1) {
+    storyPageCurrent--;
+    renderStoryPage();
+  }
+});
+
+$("storyNextBtn")?.addEventListener("click", () => {
+  const totalPages = Math.ceil(storyItems.length / pageSize) || 1;
+
+  if (storyPageCurrent < totalPages) {
+    storyPageCurrent++;
+    renderStoryPage();
+  }
+});
+
+/* VİDEO LİSTE */
+async function loadAdminHeroVideos() {
+  const list = $("heroVideoAdminList");
+  if (!list) return;
+
+  const q = query(collection(db, "heroVideos"), orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
+
+  heroVideoItems = [];
+
+  snapshot.forEach((docSnap) => {
+    heroVideoItems.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  renderHeroVideoPage();
+}
+
+function renderHeroVideoPage() {
+  const list = $("heroVideoAdminList");
+  const info = $("heroVideoPageInfo");
+
+  if (!list) return;
+
+  const start = (heroVideoPageCurrent - 1) * pageSize;
+  const end = start + pageSize;
+  const pageItems = heroVideoItems.slice(start, end);
+
+  list.innerHTML = "";
+
+  pageItems.forEach((item) => {
+    list.innerHTML += `
+      <div 
+        class="admin-video-card bg-white/70 rounded-3xl overflow-hidden shadow-lg border border-rose-100 p-3"
+        data-url="${item.videoUrl}"
+      >
+        <video
+          src="${item.videoUrl}"
+          class="admin-video-preview w-full h-40 object-cover rounded-2xl mb-3 cursor-pointer"
+          muted
+          playsinline
+        ></video>
+
+        <button
+          class="selectHeroVideoBtn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold w-full mb-2"
+          data-url="${item.videoUrl}"
+        >
+          Seç / Yayınla
+        </button>
+
+        <button
+          class="deleteHeroVideoBtn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold w-full"
+          data-id="${item.id}"
+        >
+          Sil
+        </button>
+      </div>
+    `;
+  });
+
+  const totalPages = Math.ceil(heroVideoItems.length / pageSize) || 1;
+  if (info) info.textContent = `${heroVideoPageCurrent} / ${totalPages}`;
+
+  document.querySelectorAll(".selectHeroVideoBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      await setDoc(
+        doc(db, "siteSettings", "main"),
+        { heroVideo: btn.dataset.url },
+        { merge: true }
+      );
+
+      alert("Video yayınlandı");
+    });
+  });
+
+  document.querySelectorAll(".deleteHeroVideoBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Video silinsin mi?")) return;
+
+      await deleteDoc(doc(db, "heroVideos", btn.dataset.id));
+
+      alert("Video silindi");
+      loadAdminHeroVideos();
+    });
+  });
+}
+
+$("heroVideoPrevBtn")?.addEventListener("click", () => {
+  if (heroVideoPageCurrent > 1) {
+    heroVideoPageCurrent--;
+    renderHeroVideoPage();
+  }
+});
+
+$("heroVideoNextBtn")?.addEventListener("click", () => {
+  const totalPages = Math.ceil(heroVideoItems.length / pageSize) || 1;
+
+  if (heroVideoPageCurrent < totalPages) {
+    heroVideoPageCurrent++;
+    renderHeroVideoPage();
+  }
+});
+
+/* VİDEO HOVER VE MODAL */
+let videoHoverTimer = null;
+
+document.addEventListener("mouseenter", (e) => {
+  const target = e.target;
+
+  if (!(target instanceof Element)) return;
+
+  const card = target.closest(".admin-video-card");
+
+  if (!card) return;
+
+  clearTimeout(videoHoverTimer);
+
+  videoHoverTimer = setTimeout(() => {
+    const video = card.querySelector("video");
+    if (!video) return;
+
+    video.currentTime = 0;
+    video.muted = true;
+    video.play().catch(() => {});
+  }, 500);
+}, true);
+
+document.addEventListener("mouseleave", (e) => {
+  const target = e.target;
+
+  if (!(target instanceof Element)) return;
+
+  const card = target.closest(".admin-video-card");
+
+  if (!card) return;
+
+  clearTimeout(videoHoverTimer);
+
+  const video = card.querySelector("video");
+  if (!video) return;
+
+  video.pause();
+  video.currentTime = 0;
+}, true);
+
+document.addEventListener("click", (e) => {
+  const target = e.target;
+
+  if (!(target instanceof Element)) return;
+
+  if (target.closest("button")) return;
+
+  const card = target.closest(".admin-video-card");
+
+  if (!card) return;
+
+  openAdminVideoModal(card.dataset.url);
+});
+
+function openAdminVideoModal(url) {
+  let modal = document.getElementById("adminVideoModal");
+
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "adminVideoModal";
+    modal.innerHTML = `
+      <div class="admin-video-modal-box">
+        <button id="adminVideoModalClose">×</button>
+        <video id="adminVideoModalPlayer" controls autoplay playsinline></video>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    document
+      .getElementById("adminVideoModalClose")
+      .addEventListener("click", closeAdminVideoModal);
+
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeAdminVideoModal();
+    });
+  }
+
+  const player = document.getElementById("adminVideoModalPlayer");
+  player.src = url;
+  modal.classList.add("active");
+}
+
+function closeAdminVideoModal() {
+  const modal = document.getElementById("adminVideoModal");
+  const player = document.getElementById("adminVideoModalPlayer");
+
+  if (player) {
+    player.pause();
+    player.src = "";
+  }
+
+  if (modal) {
+    modal.classList.remove("active");
+  }
+}
+
+/* ÖNEMLİ TARİHLER */
+function formatDateTRAdmin(dateString) {
   if (!dateString) return "";
 
   const date = new Date(dateString);
@@ -21,803 +899,575 @@ function formatDateTR(dateString) {
   });
 }
 
-async function loadSettings() {
-  const ref = doc(db, "siteSettings", "main");
-  const snap = await getDoc(ref);
-
-  if (!snap.exists()) return;
-
-  const data = snap.data();
-
-  if (data.heroVideo) {
-    const mainSource = document.getElementById("heroVideoSource");
-    const blurSource = document.getElementById("heroVideoBlurSource");
-
-    const mainVideo = document.getElementById("heroVideo");
-    const blurVideo = document.getElementById("heroVideoBlur");
-
-    if (mainSource && blurSource && mainVideo && blurVideo) {
-      const videoUrl = data.heroVideo + "?t=" + Date.now();
-
-      mainSource.src = videoUrl;
-      blurSource.src = videoUrl;
-
-      mainVideo.load();
-      blurVideo.load();
-
-      blurVideo.muted = true;
-      blurVideo.play().catch(() => {});
-    }
-  }
-
-  if (document.getElementById("storyTitle")) {
-    document.getElementById("storyTitle").textContent =
-      data.storyTitle || "Hikayemiz";
-  }
-
-  if (document.getElementById("storyText")) {
-    document.getElementById("storyText").textContent =
-      data.storyText || "";
-  }
-
-window.savedSecretMessage = data.secretMessage || "";
-
-window.savedSecretQuestion = data.secretQuestion || "İlk buluştuğumuz yer";
-window.savedSecretAnswer = (data.secretAnswer || "afyon").toLocaleLowerCase("tr-TR");
-
-const secretPass = document.getElementById("secretPass");
-
-if (secretPass) {
-  secretPass.placeholder = window.savedSecretQuestion;
-}
-
-const secretMessageBox = document.getElementById("secretMessage");
-
-if (secretMessageBox) {
-  secretMessageBox.textContent = "";
-  secretMessageBox.classList.add("hidden");
-}
-
-  const saidInstagramLink = document.getElementById("saidInstagramLink");
-const veraInstagramLink = document.getElementById("veraInstagramLink");
-
-if (saidInstagramLink && data.saidInstagram) {
-  saidInstagramLink.href = data.saidInstagram;
-}
-
-if (veraInstagramLink && data.veraInstagram) {
-  veraInstagramLink.href = data.veraInstagram;
-}
-}
-
-
-function addGallerySizeStyles() {
-  if (document.getElementById("gallerySizeStyles")) return;
-
-  const style = document.createElement("style");
-  style.id = "gallerySizeStyles";
-  style.textContent = `
-    #galleryContainer {
-      display: block !important;
-    }
-
-    .gallery-group-title {
-      width: 100%;
-      margin: 28px 0 18px;
-      font-size: 22px;
-      font-weight: 900;
-      text-align: left;
-      color: #fb7185;
-    }
-
-    .gallery-grid-vertical {
-      display: grid;
-      grid-template-columns: repeat(1, minmax(0, 1fr));
-      gap: 20px;
-    }
-
-    .gallery-grid-landscape {
-      display: grid;
-      grid-template-columns: repeat(1, minmax(0, 1fr));
-      gap: 20px;
-      margin-top: 28px;
-    }
-
-    @media (min-width: 640px) {
-      .gallery-grid-vertical {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    @media (min-width: 1024px) {
-      .gallery-grid-vertical {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-      }
-
-      .gallery-grid-landscape {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    .gallery-item {
-      width: 100%;
-      overflow: hidden;
-      border-radius: 18px;
-      background: rgba(255,255,255,0.06);
-    }
-
-    .gallery-img {
-      width: 100%;
-      display: block;
-      border-radius: 18px;
-    }
-
-    .gallery-img-vertical {
-      height: 315px;
-      object-fit: cover;
-    }
-
-    .gallery-img-landscape {
-      height: 260px;
-      object-fit: contain;
-      background: rgba(0,0,0,0.22);
-      padding: 6px;
-    }
-
-    .gallery-item p {
-      min-height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 8px 6px;
-      margin: 0;
-    }
-
-    @media (max-width: 768px) {
-      .gallery-img-vertical {
-        height: 255px;
-      }
-
-      .gallery-img-landscape {
-        height: 230px;
-      }
-    }
-
-    .gallery-item {
-      transition: transform 0.35s ease, box-shadow 0.35s ease;
-      cursor: pointer;
-    }
-
-    @media (hover: hover) and (pointer: fine) {
-      .gallery-item:hover {
-        transform: scale(1.04);
-        z-index: 20;
-        position: relative;
-        box-shadow: 0 22px 50px rgba(0,0,0,0.45);
-      }
-    }
-
-    .gallery-photo-modal {
-      position: fixed;
-      inset: 0;
-      z-index: 99999;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.72);
-      backdrop-filter: blur(8px);
-      padding: 24px;
-    }
-
-    .gallery-photo-modal.active {
-      display: flex;
-    }
-
-    .gallery-photo-modal-box {
-      position: relative;
-      max-width: 90vw;
-      max-height: 90vh;
-      animation: galleryZoomIn 0.25s ease;
-    }
-
-    .gallery-photo-modal img {
-      max-width: 90vw;
-      max-height: 90vh;
-      width: auto;
-      height: auto;
-      object-fit: contain;
-      border-radius: 24px;
-      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
-      background: rgba(0,0,0,0.25);
-    }
-
-    .gallery-photo-modal-close {
-      position: absolute;
-      top: -14px;
-      right: -14px;
-      width: 42px;
-      height: 42px;
-      border: none;
-      border-radius: 999px;
-      background: linear-gradient(135deg, #fb7185, #ec4899);
-      color: white;
-      font-size: 26px;
-      line-height: 42px;
-      text-align: center;
-      cursor: pointer;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.35);
-    }
-
-    @keyframes galleryZoomIn {
-      from {
-        transform: scale(0.86);
-        opacity: 0;
-      }
-      to {
-        transform: scale(1);
-        opacity: 1;
-      }
-    }
-
-    @media (max-width: 1024px) {
-      .gallery-photo-modal {
-        padding: 16px;
-      }
-
-      .gallery-photo-modal-box,
-      .gallery-photo-modal img {
-        max-width: 90vw;
-        max-height: 90vh;
-      }
-    }
-
-  `;
-
-  document.head.appendChild(style);
-}
-
-addGallerySizeStyles();
-
-function getImageOrientation(imageUrl) {
-  return new Promise((resolve) => {
-    const img = new Image();
-
-    img.onload = () => {
-      if (img.naturalWidth > img.naturalHeight) {
-        resolve("landscape");
-      } else {
-        resolve("vertical");
-      }
-    };
-
-    img.onerror = () => {
-      resolve("vertical");
-    };
-
-    img.src = imageUrl;
-  });
-}
-
-function createGalleryCard(item, index) {
-  const isLandscape = item.orientation === "landscape";
-
-  const imageClass = isLandscape
-    ? "gallery-img gallery-img-landscape"
-    : "gallery-img gallery-img-vertical";
-
-  return `
-    <div
-      class="gallery-item"
-      data-gallery-index="${index}"
-      data-full-src="${item.imageUrl}"
-      data-title="${item.title || ""}"
-    >
-      <img
-        src="${item.imageUrl}"
-        alt="${item.title || "Galeri fotoğrafı"}"
-        class="${imageClass}"
-        loading="lazy"
-      >
-      <p>${item.title || ""}</p>
-    </div>
-  `;
-}
-
-async function loadGallery() {
-  const container = document.getElementById("galleryContainer");
-  if (!container) return;
-
-  const q = query(collection(db, "gallery"), orderBy("createdAt", "desc"));
-  const snapshot = await getDocs(q);
-
-  const items = [];
-
-  for (const docSnap of snapshot.docs) {
-    const item = docSnap.data();
-    const orientation = await getImageOrientation(item.imageUrl);
-
-    items.push({
-      ...item,
-      orientation
-    });
-  }
-
-  const verticalImages = items.filter((item) => item.orientation !== "landscape");
-  const landscapeImages = items.filter((item) => item.orientation === "landscape");
-
-  const sortedItems = [...verticalImages, ...landscapeImages];
-
-  window.galleryPreviewItems = sortedItems;
-
-  const verticalCount = verticalImages.length;
-
-  container.innerHTML = `
-    <div class="gallery-grid-vertical">
-      ${verticalImages.map((item, index) => createGalleryCard(item, index)).join("")}
-    </div>
-
-    ${
-      landscapeImages.length
-        ? `
-          <h3 class="gallery-group-title">Yatay Fotoğraflar</h3>
-          <div class="gallery-grid-landscape">
-            ${landscapeImages
-              .map((item, index) => createGalleryCard(item, verticalCount + index))
-              .join("")}
-          </div>
-        `
-        : ""
-    }
-  `;
-}
-
-async function loadDates() {
-  const container = document.getElementById("datesContainer");
-  if (!container) return;
+async function loadAdminDates() {
+  const list = $("datesAdminList");
+  if (!list) return;
 
   const q = query(collection(db, "dates"), orderBy("date", "asc"));
   const snapshot = await getDocs(q);
 
-  container.innerHTML = "";
+  dateItems = [];
 
-  snapshot.forEach((doc) => {
-    const item = doc.data();
+  snapshot.forEach((docSnap) => {
+    dateItems.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
 
-    container.innerHTML += `
-      <div class="date-card-custom">
-        <h3>${formatDateTR(item.date)}</h3>
-        <h4>${item.title || ""}</h4>
+  renderDatePage();
+}
+
+function renderDatePage() {
+  const list = $("datesAdminList");
+  const info = $("datesPageInfo");
+
+  if (!list) return;
+
+  const start = (datePageCurrent - 1) * pageSize;
+  const end = start + pageSize;
+  const pageItems = dateItems.slice(start, end);
+
+  list.innerHTML = "";
+
+  pageItems.forEach((item) => {
+    list.innerHTML += `
+      <div class="date-admin-card">
+        <h3>${formatDateTRAdmin(item.date)}</h3>
+        <h4>${item.title || "Başlıksız"}</h4>
         <p>${item.text || ""}</p>
+
+        <button
+          class="deleteDateBtn"
+          data-id="${item.id}"
+        >
+          Sil
+        </button>
       </div>
     `;
   });
+
+  const totalPages = Math.ceil(dateItems.length / pageSize) || 1;
+
+  if (info) {
+    info.textContent = `${datePageCurrent} / ${totalPages}`;
+  }
+
+  document.querySelectorAll(".deleteDateBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Bu tarih silinsin mi?")) return;
+
+      await deleteDoc(doc(db, "dates", btn.dataset.id));
+
+      alert("Tarih silindi");
+      loadAdminDates();
+    });
+  });
 }
 
-async function loadPlans() {
-  const container = document.getElementById("plansContainer");
-  if (!container) return;
+$("datesPrevBtn")?.addEventListener("click", () => {
+  if (datePageCurrent > 1) {
+    datePageCurrent--;
+    renderDatePage();
+  }
+});
+
+$("datesNextBtn")?.addEventListener("click", () => {
+  const totalPages = Math.ceil(dateItems.length / pageSize) || 1;
+
+  if (datePageCurrent < totalPages) {
+    datePageCurrent++;
+    renderDatePage();
+  }
+});
+
+/* PLANLAR LİSTE */
+async function loadAdminPlans() {
+  const list = $("plansAdminList");
+  if (!list) return;
 
   const q = query(collection(db, "plans"), orderBy("createdAt", "desc"));
   const snapshot = await getDocs(q);
 
-  const plans = [];
+  planItems = [];
 
-  snapshot.forEach((doc) => {
-    plans.push(doc.data());
+  snapshot.forEach((docSnap) => {
+    planItems.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
   });
 
-  const nearPlans = plans.filter((x) => x.type !== "dream");
-  const dreamPlans = plans.filter((x) => x.type === "dream");
+  renderPlanPage();
+}
 
-  container.innerHTML = `
-    <div class="plans-box-custom">
-      <h3>Yakın Planlar</h3>
-      <div class="plans-list-custom" id="nearPlansList"></div>
-    </div>
+function renderPlanPage() {
+  const list = $("plansAdminList");
+  const info = $("plansPageInfo");
 
-    <div class="plans-box-custom">
-      <h3>Hayal Listesi</h3>
-      <div class="plans-list-custom" id="dreamPlansList"></div>
+  if (!list) return;
+
+  const nearPlans = planItems.filter((item) => item.type !== "dream");
+  const dreamPlans = planItems.filter((item) => item.type === "dream");
+
+  function createPlanCard(item) {
+    const isPublished = item.published === true;
+
+    return `
+      <div class="bg-white/70 rounded-3xl shadow-lg border border-rose-100 p-4">
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <span class="text-xs font-black px-3 py-1 rounded-full ${
+            isPublished
+              ? "bg-emerald-100 text-emerald-700"
+              : "bg-rose-100 text-rose-700"
+          }">
+            ${isPublished ? "Yayında" : "Yayında Değil"}
+          </span>
+
+          <label class="flex items-center gap-2 text-sm font-bold text-rose-700 cursor-pointer">
+            <input
+              type="checkbox"
+              class="publishPlanCheck w-5 h-5 accent-rose-500"
+              data-id="${item.id}"
+              ${isPublished ? "checked" : ""}
+            >
+            Yayınla
+          </label>
+        </div>
+
+        <h3 class="font-bold text-rose-600 text-lg mb-2">
+          ${item.title || "Başlıksız"}
+        </h3>
+
+        <p class="text-sm text-rose-900/80 line-clamp-5 mb-4">
+          ${item.text || ""}
+        </p>
+
+        <button
+          class="deletePlanBtn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold w-full"
+          data-id="${item.id}"
+        >
+          Sil
+        </button>
+      </div>
+    `;
+  }
+
+  list.innerHTML = `
+    <div class="col-span-full">
+      <h3 class="text-2xl font-black text-rose-600 mb-4">
+        📝 Planlarımız
+      </h3>
+
+      <div class="admin-grid mb-10">
+        ${
+          nearPlans.length
+            ? nearPlans.map(createPlanCard).join("")
+            : `<p class="col-span-full text-rose-700 bg-white/60 rounded-2xl p-4">Henüz plan eklenmedi.</p>`
+        }
+      </div>
+
+      <h3 class="text-2xl font-black text-rose-600 mb-4">
+        ✨ Hayallerimiz
+      </h3>
+
+      <div class="admin-grid">
+        ${
+          dreamPlans.length
+            ? dreamPlans.map(createPlanCard).join("")
+            : `<p class="col-span-full text-rose-700 bg-white/60 rounded-2xl p-4">Henüz hayal eklenmedi.</p>`
+        }
+      </div>
     </div>
   `;
 
-  const nearList = document.getElementById("nearPlansList");
-  const dreamList = document.getElementById("dreamPlansList");
+  const publishedCount = planItems.filter((item) => item.published === true).length;
 
-  nearPlans.forEach((item) => {
-    nearList.innerHTML += `
-      <div class="plan-item-custom">
-        <span>✓</span>
-        <p>${item.title || item.text || ""}</p>
-      </div>
-    `;
+  if (info) {
+    info.textContent = `Toplam: ${planItems.length} / Yayında: ${publishedCount}`;
+  }
+
+  document.querySelectorAll(".publishPlanCheck").forEach((check) => {
+    check.addEventListener("change", async () => {
+      const id = check.dataset.id;
+      if (!id) return;
+
+      await setDoc(
+        doc(db, "plans", id),
+        {
+          published: check.checked
+        },
+        { merge: true }
+      );
+
+      loadAdminPlans();
+    });
   });
 
-  dreamPlans.forEach((item) => {
-    dreamList.innerHTML += `
-      <div class="plan-item-custom">
-        <span>☆</span>
-        <p>${item.title || item.text || ""}</p>
-      </div>
-    `;
+  document.querySelectorAll(".deletePlanBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id;
+
+      if (!id) return;
+      if (!confirm("Bu kayıt silinsin mi?")) return;
+
+      await deleteDoc(doc(db, "plans", id));
+
+      alert("Kayıt silindi");
+      loadAdminPlans();
+    });
   });
 }
 
-async function loadMusic() {
-  const container = document.getElementById("musicContainer");
-  if (!container) return;
+$("plansPrevBtn")?.addEventListener("click", () => {
+  if (planPageCurrent > 1) {
+    planPageCurrent--;
+    renderPlanPage();
+  }
+});
+
+$("plansNextBtn")?.addEventListener("click", () => {
+  const totalPages = Math.ceil(planItems.length / pageSize) || 1;
+
+  if (planPageCurrent < totalPages) {
+    planPageCurrent++;
+    renderPlanPage();
+  }
+});
+
+
+async function loadAdminSecrets() {
+  const list = $("secretAdminList");
+  if (!list) return;
+
+  const q = query(collection(db, "secretMessages"), orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
+
+  secretItems = [];
+
+  snapshot.forEach((docSnap) => {
+    secretItems.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  renderSecretPage();
+}
+
+function renderSecretPage() {
+  const list = $("secretAdminList");
+  const info = $("secretPageInfo");
+
+  if (!list) return;
+
+  const start = (secretPageCurrent - 1) * pageSize;
+  const end = start + pageSize;
+  const pageItems = secretItems.slice(start, end);
+
+  list.innerHTML = "";
+
+  pageItems.forEach((item) => {
+    list.innerHTML += `
+      <div class="bg-white/70 rounded-3xl shadow-lg border border-rose-100 p-4">
+        <p class="text-sm text-rose-900/80 line-clamp-6 mb-4">
+          ${item.secretMessage || ""}
+        </p>
+
+        <button
+          class="publishSecretBtn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold w-full mb-2"
+          data-id="${item.id}"
+        >
+          Yayımla
+        </button>
+
+        <button
+          class="deleteSecretBtn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold w-full"
+          data-id="${item.id}"
+        >
+          Sil
+        </button>
+      </div>
+    `;
+  });
+
+  const totalPages = Math.ceil(secretItems.length / pageSize) || 1;
+  if (info) info.textContent = `${secretPageCurrent} / ${totalPages}`;
+
+  document.querySelectorAll(".publishSecretBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const selected = secretItems.find((x) => x.id === btn.dataset.id);
+      if (!selected) return;
+
+      await setDoc(
+        doc(db, "siteSettings", "main"),
+        { secretMessage: selected.secretMessage || "" },
+        { merge: true }
+      );
+
+      alert("Gizli mesaj yayımlandı");
+    });
+  });
+
+  document.querySelectorAll(".deleteSecretBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Bu gizli mesaj silinsin mi?")) return;
+
+      await deleteDoc(doc(db, "secretMessages", btn.dataset.id));
+
+      alert("Gizli mesaj silindi");
+      loadAdminSecrets();
+    loadAdminSecretQuestions();
+    loadContactSettings();
+    });
+  });
+}
+
+$("secretPrevBtn")?.addEventListener("click", () => {
+  if (secretPageCurrent > 1) {
+    secretPageCurrent--;
+    renderSecretPage();
+  }
+});
+
+$("secretNextBtn")?.addEventListener("click", () => {
+  const totalPages = Math.ceil(secretItems.length / pageSize) || 1;
+
+  if (secretPageCurrent < totalPages) {
+    secretPageCurrent++;
+    renderSecretPage();
+  }
+});
+
+
+
+/* İLETİŞİM AYARLARI */
+function renderCurrentContactLinks(data) {
+  const box = $("currentContactLinks");
+  if (!box) return;
+
+  const saidInstagram = data.saidInstagram || "";
+  const veraInstagram = data.veraInstagram || "";
+
+  box.innerHTML = `
+    <div class="bg-white/70 rounded-2xl p-4 border border-rose-100">
+      <p class="font-bold text-rose-600 mb-1">Muhammed</p>
+      ${
+        saidInstagram
+          ? `<a href="${saidInstagram}" target="_blank" rel="noreferrer" class="underline break-all">${saidInstagram}</a>`
+          : `<p class="opacity-70">Instagram linki kayıtlı değil.</p>`
+      }
+    </div>
+
+    <div class="bg-white/70 rounded-2xl p-4 border border-rose-100">
+      <p class="font-bold text-rose-600 mb-1">Vera</p>
+      ${
+        veraInstagram
+          ? `<a href="${veraInstagram}" target="_blank" rel="noreferrer" class="underline break-all">${veraInstagram}</a>`
+          : `<p class="opacity-70">Instagram linki kayıtlı değil.</p>`
+      }
+    </div>
+  `;
+}
+
+async function loadContactSettings() {
+  const saidInput = $("saidInstagramInput");
+  const veraInput = $("veraInstagramInput");
+  const currentBox = $("currentContactLinks");
+
+  if (!saidInput && !veraInput && !currentBox) return;
 
   const ref = doc(db, "siteSettings", "main");
   const snap = await getDoc(ref);
 
-  if (!snap.exists()) return;
-
-  const data = snap.data();
-
-  if (!data.spotifyPlaylistUrl) {
-    container.innerHTML = "<p>Spotify playlist linki eklenmedi.</p>";
+  if (!snap.exists()) {
+    if (currentBox) currentBox.innerHTML = "<p>Kayıtlı iletişim bilgisi yok.</p>";
     return;
   }
 
-  const playlistMatch = data.spotifyPlaylistUrl.match(/playlist\/([a-zA-Z0-9]+)/);
-  const playlistId = playlistMatch ? playlistMatch[1] : "";
-  const embedUrl = playlistId
-    ? `https://open.spotify.com/embed/playlist/${playlistId}`
-    : data.spotifyPlaylistUrl
-        .replace("open.spotify.com/playlist/", "open.spotify.com/embed/playlist/")
-        .replace("open.spotify.com/intl-tr/playlist/", "open.spotify.com/embed/playlist/")
-        .split("?")[0];
+  const data = snap.data();
 
-  container.innerHTML = `
-    <iframe
-      style="border-radius:18px"
-      src="${embedUrl}?utm_source=generator&theme=0"
-      width="100%"
-      height="650"
-      frameborder="0"
-      allowfullscreen=""
-      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-      loading="lazy">
-    </iframe>
-  `;
+  if (saidInput) saidInput.value = data.saidInstagram || "";
+  if (veraInput) veraInput.value = data.veraInstagram || "";
+
+  renderCurrentContactLinks(data);
 }
 
+$("saveContactBtn")?.addEventListener("click", async () => {
+  const saidInstagram = $("saidInstagramInput")?.value.trim() || "";
+  const veraInstagram = $("veraInstagramInput")?.value.trim() || "";
 
+  if (!saidInstagram && !veraInstagram) {
+    alert("En az bir Instagram linki gir");
+    return;
+  }
 
+  if (
+    saidInstagram &&
+    (!saidInstagram.includes("instagram.com") || !saidInstagram.startsWith("http"))
+  ) {
+    alert("Muhammed için geçerli Instagram linki gir");
+    return;
+  }
 
-function addGalleryProfessionalPreviewStyles() {
-  if (document.getElementById("galleryProfessionalPreviewStyles")) return;
+  if (
+    veraInstagram &&
+    (!veraInstagram.includes("instagram.com") || !veraInstagram.startsWith("http"))
+  ) {
+    alert("Vera için geçerli Instagram linki gir");
+    return;
+  }
 
-  const style = document.createElement("style");
-  style.id = "galleryProfessionalPreviewStyles";
-  style.textContent = `
-    .gallery-item {
-      transition: transform 0.35s ease, box-shadow 0.35s ease;
-      cursor: pointer;
-    }
+  await setDoc(
+    doc(db, "siteSettings", "main"),
+    {
+      saidInstagram,
+      veraInstagram
+    },
+    { merge: true }
+  );
 
-    @media (hover: hover) and (pointer: fine) {
-      .gallery-item:hover {
-        transform: scale(1.04);
-        z-index: 20;
-        position: relative;
-        box-shadow: 0 22px 50px rgba(0,0,0,0.45);
-      }
-    }
+  alert("İletişim bilgileri kaydedildi");
+  loadContactSettings();
+});
 
-    .gallery-photo-modal {
-      position: fixed;
-      inset: 0;
-      z-index: 99999;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.78);
-      backdrop-filter: blur(9px);
-      padding: 24px;
-    }
+$("deleteContactBtn")?.addEventListener("click", async () => {
+  if (!confirm("İletişim bilgileri silinsin mi?")) return;
 
-    .gallery-photo-modal.active {
-      display: flex;
-    }
+  await setDoc(
+    doc(db, "siteSettings", "main"),
+    {
+      saidInstagram: "",
+      veraInstagram: ""
+    },
+    { merge: true }
+  );
 
-    .gallery-photo-modal-box {
-      position: relative;
-      max-width: 90vw;
-      max-height: 90vh;
-      animation: galleryZoomIn 0.25s ease;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-    }
+  if ($("saidInstagramInput")) $("saidInstagramInput").value = "";
+  if ($("veraInstagramInput")) $("veraInstagramInput").value = "";
 
-    .gallery-photo-modal img {
-      max-width: 90vw;
-      max-height: 82vh;
-      width: auto;
-      height: auto;
-      object-fit: contain;
-      border-radius: 24px;
-      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
-      background: rgba(0,0,0,0.25);
-    }
+  renderCurrentContactLinks({
+    saidInstagram: "",
+    veraInstagram: ""
+  });
 
-    .gallery-photo-modal-title {
-      color: white;
-      font-size: 16px;
-      font-weight: 800;
-      text-align: center;
-      min-height: 22px;
-    }
+  alert("İletişim bilgileri silindi");
+});
 
-    .gallery-photo-modal-counter {
-      color: rgba(255,255,255,0.78);
-      font-size: 13px;
-      font-weight: 700;
-      text-align: center;
-    }
+/* GİZLİ SORULAR LİSTE */
+async function loadAdminSecretQuestions() {
+  const list = $("secretQuestionAdminList");
+  if (!list) return;
 
-    .gallery-photo-modal-close,
-    .gallery-photo-modal-prev,
-    .gallery-photo-modal-next {
-      border: none;
-      border-radius: 999px;
-      background: linear-gradient(135deg, #fb7185, #ec4899);
-      color: white;
-      cursor: pointer;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.35);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+  const q = query(
+    collection(db, "secretQuestions"),
+    orderBy("createdAt", "desc")
+  );
 
-    .gallery-photo-modal-close {
-      position: absolute;
-      top: -14px;
-      right: -14px;
-      width: 42px;
-      height: 42px;
-      font-size: 28px;
-      z-index: 3;
-    }
+  const snapshot = await getDocs(q);
 
-    .gallery-photo-modal-prev,
-    .gallery-photo-modal-next {
-      position: fixed;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 48px;
-      height: 48px;
-      font-size: 34px;
-      z-index: 3;
-    }
+  secretQuestionItems = [];
 
-    .gallery-photo-modal-prev {
-      left: 24px;
-    }
-
-    .gallery-photo-modal-next {
-      right: 24px;
-    }
-
-    @keyframes galleryZoomIn {
-      from { transform: scale(0.86); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-
-    @media (max-width: 768px) {
-      .gallery-photo-modal {
-        padding: 14px;
-      }
-
-      .gallery-photo-modal img {
-        max-width: 92vw;
-        max-height: 78vh;
-      }
-
-      .gallery-photo-modal-prev,
-      .gallery-photo-modal-next {
-        width: 42px;
-        height: 42px;
-        font-size: 28px;
-      }
-
-      .gallery-photo-modal-prev {
-        left: 10px;
-      }
-
-      .gallery-photo-modal-next {
-        right: 10px;
-      }
-    }
-  `;
-
-  document.head.appendChild(style);
-}
-
-addGalleryProfessionalPreviewStyles();
-
-
-let galleryHoverTimer = null;
-let galleryModalOpen = false;
-let currentGalleryIndex = 0;
-
-function getGalleryItems() {
-  return Array.isArray(window.galleryPreviewItems)
-    ? window.galleryPreviewItems
-    : [];
-}
-
-function renderGalleryModalContent() {
-  const items = getGalleryItems();
-  const item = items[currentGalleryIndex];
-
-  if (!item) return;
-
-  const img = document.getElementById("galleryPhotoModalImg");
-  const title = document.getElementById("galleryPhotoModalTitle");
-  const counter = document.getElementById("galleryPhotoModalCounter");
-
-  if (img) img.src = item.imageUrl;
-  if (title) title.textContent = item.title || "";
-  if (counter) counter.textContent = `${currentGalleryIndex + 1} / ${items.length}`;
-}
-
-function openGalleryPhotoModal(index) {
-  clearTimeout(galleryHoverTimer);
-
-  const items = getGalleryItems();
-  if (!items.length) return;
-
-  currentGalleryIndex = Number(index || 0);
-
-  if (currentGalleryIndex < 0) currentGalleryIndex = 0;
-  if (currentGalleryIndex >= items.length) currentGalleryIndex = items.length - 1;
-
-  let modal = document.getElementById("galleryPhotoModal");
-
-  if (!modal) {
-    modal = document.createElement("div");
-    modal.id = "galleryPhotoModal";
-    modal.className = "gallery-photo-modal";
-    modal.innerHTML = `
-      <button class="gallery-photo-modal-prev" id="galleryPhotoModalPrev">‹</button>
-      <div class="gallery-photo-modal-box">
-        <button class="gallery-photo-modal-close" id="galleryPhotoModalClose">×</button>
-        <img id="galleryPhotoModalImg" src="" alt="Galeri fotoğrafı">
-        <div class="gallery-photo-modal-title" id="galleryPhotoModalTitle"></div>
-        <div class="gallery-photo-modal-counter" id="galleryPhotoModalCounter"></div>
-      </div>
-      <button class="gallery-photo-modal-next" id="galleryPhotoModalNext">›</button>
-    `;
-
-    document.body.appendChild(modal);
-
-    document.getElementById("galleryPhotoModalClose")
-      ?.addEventListener("click", (e) => {
-        e.stopPropagation();
-        closeGalleryPhotoModal();
-      });
-
-    document.getElementById("galleryPhotoModalPrev")
-      ?.addEventListener("click", (e) => {
-        e.stopPropagation();
-        showPreviousGalleryPhoto();
-      });
-
-    document.getElementById("galleryPhotoModalNext")
-      ?.addEventListener("click", (e) => {
-        e.stopPropagation();
-        showNextGalleryPhoto();
-      });
-
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) closeGalleryPhotoModal();
+  snapshot.forEach((docSnap) => {
+    secretQuestionItems.push({
+      id: docSnap.id,
+      ...docSnap.data()
     });
+  });
+
+  renderSecretQuestionPage();
+}
+
+function renderSecretQuestionPage() {
+  const list = $("secretQuestionAdminList");
+  const info = $("secretQuestionPageInfo");
+
+  if (!list) return;
+
+  const start = (secretQuestionPageCurrent - 1) * pageSize;
+  const end = start + pageSize;
+  const pageItems = secretQuestionItems.slice(start, end);
+
+  list.innerHTML = "";
+
+  pageItems.forEach((item) => {
+    list.innerHTML += `
+      <div class="bg-white/70 rounded-3xl shadow-lg border border-rose-100 p-4">
+        <h3 class="font-bold text-rose-600 text-lg mb-2">
+          ${item.secretQuestion || "Sorusu yok"}
+        </h3>
+
+        <p class="text-sm text-rose-900/80 mb-4 break-words">
+          <strong>Cevap:</strong> ${item.secretAnswer || "-"}
+        </p>
+
+        <button
+          class="activateSecretQuestionBtn bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl font-bold w-full mb-2"
+          data-id="${item.id}"
+        >
+          Aktif Yap
+        </button>
+
+        <button
+          class="deleteSecretQuestionBtn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold w-full"
+          data-id="${item.id}"
+        >
+          Sil
+        </button>
+      </div>
+    `;
+  });
+
+  const totalPages = Math.ceil(secretQuestionItems.length / pageSize) || 1;
+
+  if (info) {
+    info.textContent = `${secretQuestionPageCurrent} / ${totalPages}`;
   }
 
-  galleryModalOpen = true;
-  modal.classList.add("active");
-  renderGalleryModalContent();
+  document.querySelectorAll(".activateSecretQuestionBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const selected = secretQuestionItems.find((x) => x.id === btn.dataset.id);
+
+      if (!selected) return;
+
+      await setDoc(
+        doc(db, "siteSettings", "main"),
+        {
+          secretQuestion: selected.secretQuestion || "",
+          secretAnswer: selected.secretAnswer || ""
+        },
+        { merge: true }
+      );
+
+      alert("Bu soru ve cevap aktif yapıldı");
+    });
+  });
+
+  document.querySelectorAll(".deleteSecretQuestionBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Bu soru silinsin mi?")) return;
+
+      await deleteDoc(doc(db, "secretQuestions", btn.dataset.id));
+
+      alert("Soru silindi");
+      loadAdminSecretQuestions();
+    loadContactSettings();
+    });
+  });
 }
 
-function closeGalleryPhotoModal() {
-  clearTimeout(galleryHoverTimer);
-
-  const modal = document.getElementById("galleryPhotoModal");
-  const img = document.getElementById("galleryPhotoModalImg");
-
-  galleryModalOpen = false;
-
-  if (modal) modal.classList.remove("active");
-  if (img) img.src = "";
-}
-
-function showPreviousGalleryPhoto() {
-  const items = getGalleryItems();
-  if (!items.length) return;
-
-  currentGalleryIndex = (currentGalleryIndex - 1 + items.length) % items.length;
-  renderGalleryModalContent();
-}
-
-function showNextGalleryPhoto() {
-  const items = getGalleryItems();
-  if (!items.length) return;
-
-  currentGalleryIndex = (currentGalleryIndex + 1) % items.length;
-  renderGalleryModalContent();
-}
-
-// Tek ve stabil hover sistemi: pointerenter/pointerleave kullanır.
-// Modal açıldıktan sonra pointerleave kapatmaz.
-document.addEventListener("pointerenter", (e) => {
-  const target = e.target;
-
-  if (!(target instanceof Element)) return;
-
-  const card = target.closest(".gallery-item");
-  if (!card) return;
-
-  const isFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-  if (!isFinePointer) return;
-
-  clearTimeout(galleryHoverTimer);
-
-  galleryHoverTimer = setTimeout(() => {
-    if (galleryModalOpen) return;
-
-    const index = Number(card.dataset.galleryIndex || 0);
-    openGalleryPhotoModal(index);
-  }, 1500);
-}, true);
-
-document.addEventListener("pointerleave", (e) => {
-  const target = e.target;
-
-  if (!(target instanceof Element)) return;
-
-  const card = target.closest(".gallery-item");
-  if (!card) return;
-
-  const isFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-  if (!isFinePointer) return;
-
-  if (!galleryModalOpen) {
-    clearTimeout(galleryHoverTimer);
+$("secretQuestionPrevBtn")?.addEventListener("click", () => {
+  if (secretQuestionPageCurrent > 1) {
+    secretQuestionPageCurrent--;
+    renderSecretQuestionPage();
   }
-}, true);
-
-document.addEventListener("click", (e) => {
-  const target = e.target;
-
-  if (!(target instanceof Element)) return;
-
-  if (target.closest(".gallery-photo-modal")) return;
-
-  const card = target.closest(".gallery-item");
-  if (!card) return;
-
-  const isFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-  if (isFinePointer) return;
-
-  const index = Number(card.dataset.galleryIndex || 0);
-  openGalleryPhotoModal(index);
 });
 
-document.addEventListener("keydown", (e) => {
-  if (!galleryModalOpen) return;
+$("secretQuestionNextBtn")?.addEventListener("click", () => {
+  const totalPages = Math.ceil(secretQuestionItems.length / pageSize) || 1;
 
-  if (e.key === "Escape") closeGalleryPhotoModal();
-  if (e.key === "ArrowLeft") showPreviousGalleryPhoto();
-  if (e.key === "ArrowRight") showNextGalleryPhoto();
+  if (secretQuestionPageCurrent < totalPages) {
+    secretQuestionPageCurrent++;
+    renderSecretQuestionPage();
+  }
 });
-
-
-loadSettings();
-loadGallery();
-loadDates();
-loadPlans();
-loadMusic();
