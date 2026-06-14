@@ -198,27 +198,28 @@
   <div id="secretAdminList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4"></div>
 </section>
 
-      <section id="secretQuestionPage" class="admin-page admin-card hidden">
-        <h2>🔐 Gizli Soru Ayarları</h2>
+    <section id="secretQuestionPage" class="admin-page admin-card hidden">
+  <h2>🔐 Gizli Soru Ayarları</h2>
 
-        <input
-          id="secretQuestionInput"
-          placeholder="Örn: İlk buluştuğumuz yer"
-        >
+  <input id="secretQuestionInput" placeholder="Güvenlik sorusu">
+  <input id="secretAnswerInput" placeholder="Doğru cevap">
 
-        <input
-          id="secretAnswerInput"
-          placeholder="Doğru cevap"
-        >
+  <button id="saveSecretQuestionBtn">
+    Soru ve Cevabı Listeye Ekle
+  </button>
 
-        <button id="saveSecretQuestionBtn">
-          Soru ve Cevabı Kaydet
-        </button>
+  <div class="flex items-center justify-between mt-8 mb-4">
+    <h3 class="text-xl font-bold text-rose-600">Kayıtlı Sorular</h3>
 
-        <p class="text-sm text-rose-700 mt-4">
-          Bu soru ana sitedeki gizli mesaj alanında ipucu olarak görünür. Cevap küçük/büyük harfe duyarsızdır.
-        </p>
-      </section>
+    <div class="flex gap-3 items-center">
+      <button id="secretQuestionPrevBtn">◀</button>
+      <span id="secretQuestionPageInfo" class="px-4 py-2 bg-white rounded-xl">1 / 1</span>
+      <button id="secretQuestionNextBtn">▶</button>
+    </div>
+  </div>
+
+  <div id="secretQuestionAdminList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4"></div>
+</section>
     </div>
 
   </main>
