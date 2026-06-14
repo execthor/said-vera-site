@@ -98,37 +98,70 @@ function addGallerySizeStyles() {
   style.id = "gallerySizeStyles";
   style.textContent = `
     #galleryContainer {
-      align-items: stretch;
+      display: block !important;
+    }
+
+    .gallery-group-title {
+      width: 100%;
+      margin: 28px 0 18px;
+      font-size: 22px;
+      font-weight: 900;
+      text-align: left;
+      color: #fb7185;
+    }
+
+    .gallery-grid-vertical {
+      display: grid;
+      grid-template-columns: repeat(1, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .gallery-grid-landscape {
+      display: grid;
+      grid-template-columns: repeat(1, minmax(0, 1fr));
+      gap: 20px;
+      margin-top: 28px;
+    }
+
+    @media (min-width: 640px) {
+      .gallery-grid-vertical {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .gallery-grid-vertical {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .gallery-grid-landscape {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
 
     .gallery-item {
       width: 100%;
       overflow: hidden;
       border-radius: 18px;
+      background: rgba(255,255,255,0.06);
     }
 
-    .gallery-item img,
     .gallery-img {
       width: 100%;
-      object-fit: cover;
       display: block;
       border-radius: 18px;
     }
 
-    .gallery-item-vertical {
-      height: 360px;
-    }
-
     .gallery-img-vertical {
       height: 315px;
-    }
-
-    .gallery-item-landscape {
-      height: 270px;
+      object-fit: cover;
     }
 
     .gallery-img-landscape {
-      height: 225px;
+      height: 260px;
+      object-fit: contain;
+      background: rgba(0,0,0,0.22);
+      padding: 6px;
     }
 
     .gallery-item p {
@@ -138,17 +171,16 @@ function addGallerySizeStyles() {
       justify-content: center;
       text-align: center;
       padding: 8px 6px;
+      margin: 0;
     }
 
     @media (max-width: 768px) {
-      .gallery-item-vertical,
-      .gallery-item-landscape {
-        height: 300px;
+      .gallery-img-vertical {
+        height: 255px;
       }
 
-      .gallery-img-vertical,
       .gallery-img-landscape {
-        height: 255px;
+        height: 230px;
       }
     }
   `;
@@ -178,6 +210,25 @@ function getImageOrientation(imageUrl) {
   });
 }
 
+function createGalleryCard(item) {
+  const isLandscape = item.orientation === "landscape";
+
+  const imageClass = isLandscape
+    ? "gallery-img gallery-img-landscape"
+    : "gallery-img gallery-img-vertical";
+
+  return `
+    <div class="gallery-item">
+      <img
+        src="${item.imageUrl}"
+        alt="${item.title || "Galeri fotoğrafı"}"
+        class="${imageClass}"
+      >
+      <p>${item.title || ""}</p>
+    </div>
+  `;
+}
+
 async function loadGallery() {
   const container = document.getElementById("galleryContainer");
   if (!container) return;
@@ -200,32 +251,22 @@ async function loadGallery() {
   const verticalImages = items.filter((item) => item.orientation !== "landscape");
   const landscapeImages = items.filter((item) => item.orientation === "landscape");
 
-  const sortedItems = [...verticalImages, ...landscapeImages];
+  container.innerHTML = `
+    <div class="gallery-grid-vertical">
+      ${verticalImages.map(createGalleryCard).join("")}
+    </div>
 
-  container.innerHTML = "";
-
-  sortedItems.forEach((item) => {
-    const isLandscape = item.orientation === "landscape";
-
-    const cardClass = isLandscape
-      ? "gallery-item gallery-item-landscape md:col-span-2"
-      : "gallery-item gallery-item-vertical";
-
-    const imageClass = isLandscape
-      ? "gallery-img gallery-img-landscape"
-      : "gallery-img gallery-img-vertical";
-
-    container.innerHTML += `
-      <div class="${cardClass}">
-        <img
-          src="${item.imageUrl}"
-          alt="${item.title || "Galeri fotoğrafı"}"
-          class="${imageClass}"
-        >
-        <p>${item.title || ""}</p>
-      </div>
-    `;
-  });
+    ${
+      landscapeImages.length
+        ? `
+          <h3 class="gallery-group-title">Yatay Fotoğraflar</h3>
+          <div class="gallery-grid-landscape">
+            ${landscapeImages.map(createGalleryCard).join("")}
+          </div>
+        `
+        : ""
+    }
+  `;
 }
 
 async function loadDates() {
