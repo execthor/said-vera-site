@@ -109,6 +109,7 @@ onAuthStateChanged(auth, (user) => {
     loadAdminStories();
     loadAdminHeroVideos();
     loadAdminDates();
+    loadAdminPlans();
     loadAdminSecrets();
     loadAdminSecretQuestions();
     loadContactSettings();
@@ -1011,7 +1012,7 @@ function renderPlanPage() {
   const dreamPlans = planItems.filter((item) => item.type === "dream");
 
   function createPlanCard(item) {
-    const isPublished = item.published === true;
+    const isPublished = item.published !== false;
 
     return `
       <div class="bg-white/70 rounded-3xl shadow-lg border border-rose-100 p-4">
