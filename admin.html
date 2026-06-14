@@ -21,8 +21,6 @@
       <button data-page="plansPage" class="menu-btn">📝 Planlarımız</button>
       <button data-page="musicPage" class="menu-btn">🎵 Müzik Listesi</button>
       <button data-page="secretPage" class="menu-btn">💌 Gizli Mesaj</button>
-      <button data-page="contactPage" class="menu-btn">📱 İletişim</button>
-
     </nav>
   </aside>
 
@@ -159,18 +157,23 @@
         <div id="plansAdminList" class="admin-grid"></div>
       </section>
 
-  <section id="musicPage" class="admin-page admin-card hidden">
-  <h2>🎵 Spotify Playlist</h2>
+      <section id="musicPage" class="admin-page admin-card hidden">
+        <h2>🎵 Spotify Playlist</h2>
 
-  <input
-    id="spotifyPlaylistUrl"
-    placeholder="Spotify playlist linki yapıştır"
-  >
+        <input
+          id="spotifyPlaylistUrl"
+          type="url"
+          placeholder="Spotify playlist linki yapıştır"
+        >
 
-  <button id="saveSpotifyPlaylistBtn">
-    Playlist Linkini Kaydet
-  </button>
-</section>
+        <p class="text-sm text-rose-700 mb-4">
+          Şu formatlar kabul edilir: open.spotify.com/playlist, open.spotify.com/embed/playlist, open.spotify.com/intl-tr/playlist
+        </p>
+
+        <button id="saveSpotifyPlaylistBtn">
+          Playlist Linkini Kaydet
+        </button>
+      </section>
 
       <section id="secretPage" class="admin-page admin-card hidden">
   <h2>💌 Gizli Mesaj</h2>
@@ -193,6 +196,7 @@
 
   <div id="secretAdminList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4"></div>
 </section>
+    </div>
 
   </main>
 </div>
@@ -287,49 +291,7 @@
   line-height: 44px;
   z-index: 2;
 }
-  #adminVideoModal {
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.75);
-  backdrop-filter: blur(8px);
-}
-
-#adminVideoModal.active {
-  display: flex;
-}
-
-.admin-video-modal-box {
-  position: relative;
-  width: 70vw;
-  max-width: 1000px;
-}
-
-#adminVideoModalPlayer {
-  width: 100%;
-  max-height: 70vh;
-  border-radius: 24px;
-  background: black;
-  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
-}
-
-#adminVideoModalClose {
-  position: absolute;
-  top: -18px;
-  right: -18px;
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  background: #e11d48;
-  color: white;
-  font-size: 30px;
-  line-height: 44px;
-  z-index: 2;
-}
-  .date-admin-card {
+    .date-admin-card {
   background: linear-gradient(135deg, #4c1024, #8f1238);
   border-radius: 22px;
   padding: 26px 24px;
