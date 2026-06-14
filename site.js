@@ -407,7 +407,7 @@ async function loadPlans() {
     plans.push(doc.data());
   });
 
-  const publishedPlans = plans.filter((x) => x.published === true);
+  const publishedPlans = plans.filter((x) => x.published !== false);
 
   const nearPlans = publishedPlans.filter((x) => x.type !== "dream");
   const dreamPlans = publishedPlans.filter((x) => x.type === "dream");
