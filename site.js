@@ -335,9 +335,13 @@ async function loadGallery() {
 
   for (const docSnap of snapshot.docs) {
     const item = docSnap.data();
+
+    if (item.published === false) continue;
+
     const orientation = await getImageOrientation(item.imageUrl);
 
     items.push({
+      id: docSnap.id,
       ...item,
       orientation
     });
@@ -383,6 +387,8 @@ async function loadDates() {
 
   snapshot.forEach((doc) => {
     const item = doc.data();
+
+    if (item.published === false) return;
 
     container.innerHTML += `
       <div class="date-card-custom">
