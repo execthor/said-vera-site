@@ -248,9 +248,19 @@
           placeholder="Vera Instagram linki"
         >
 
-        <button id="saveContactBtn">
-          İletişim Bilgilerini Kaydet
-        </button>
+        <div class="flex flex-wrap gap-3">
+          <button id="saveContactBtn">
+            İletişim Bilgilerini Kaydet
+          </button>
+
+          <button
+            id="deleteContactBtn"
+            type="button"
+            class="!bg-red-500 hover:!bg-red-600"
+          >
+            İletişim Bilgilerini Sil
+          </button>
+        </div>
 
         <p class="text-sm text-rose-700 mt-4">
           Örnek: https://www.instagram.com/kullaniciadi/
@@ -465,6 +475,6 @@
 
 </style>
 
-<script type="module" src="admin.js?v=contact-getdoc-fix-1"></script>
+<script type="module" src="admin.js?v=story-contact-delete-1"></script>
 </body>
 </html>
