@@ -44,14 +44,36 @@
 </div>
       <div class="mb-10">
         <h1 class="text-4xl font-bold text-rose-600">Hoş geldin Said & Vera 🌹</h1>
-        <p class="text-rose-700 mt-2">Her menü ayrı sayfa gibi çalışır. Admin tarafında eklenen kayıt listeleri gösterilmez.</p>
+        <p class="text-rose-700 mt-2">Her menü artık ayrı sayfa gibi çalışır. Kayıtlar 5x5 kartlarla listelenir.</p>
       </div>
 
       <section id="videoPage" class="admin-page admin-card">
         <h2>🎥 Ana Video</h2>
         <input id="heroVideoFile" type="file" accept="video/*">
         <button id="uploadHeroVideoBtn">Video Yükle</button>
+        <div class="flex items-center justify-between mt-8 mb-4">
+  <h3 class="text-xl font-bold text-rose-600">
+    Kayıtlı Videolar
+  </h3>
 
+  <div class="flex gap-3 items-center">
+    <button id="heroVideoPrevBtn">◀</button>
+
+    <span
+      id="heroVideoPageInfo"
+      class="px-4 py-2 bg-white rounded-xl"
+    >
+      1 / 1
+    </span>
+
+    <button id="heroVideoNextBtn">▶</button>
+  </div>
+</div>
+
+<div
+  id="heroVideoAdminList"
+  class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4"
+></div>
       </section>
 
       <section id="storyPage" class="admin-page admin-card hidden">
@@ -59,39 +81,64 @@
         <input id="storyTitleInput" placeholder="Başlık">
         <textarea id="storyTextInput" placeholder="Hikaye metni"></textarea>
         <button id="saveStoryBtn">Hikayeyi Kaydet</button>
+        <div class="flex items-center justify-between mt-8 mb-4">
+  <h3 class="text-xl font-bold text-rose-600">Kayıtlı Hikayeler</h3>
 
+  <div class="flex gap-3 items-center">
+    <button id="storyPrevBtn">◀</button>
+    <span id="storyPageInfo" class="px-4 py-2 bg-white rounded-xl">1 / 1</span>
+    <button id="storyNextBtn">▶</button>
+  </div>
+</div>
+
+<div
+  id="storyAdminList"
+  class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4"
+></div>
       </section>
 
       <section id="galleryPage" class="admin-page admin-card hidden">
         <div class="admin-title-row">
           <h2>🖼️ Galeri</h2>
-
+          <div class="pager-box">
+            <button id="galleryPrevBtn">◀</button>
+            <span id="galleryPageInfo">1 / 1</span>
+            <button id="galleryNextBtn">▶</button>
+          </div>
         </div>
         <div class="grid md:grid-cols-2 gap-4 mb-6">
           <input id="photoFile" type="file" accept="image/*">
           <input id="photoTitle" placeholder="Fotoğraf başlığı">
         </div>
         <button id="uploadPhotoBtn" class="mb-8">Fotoğraf Yükle</button>
-
+        <div id="galleryAdminList" class="admin-grid"></div>
   
       </section>
 
       <section id="datesPage" class="admin-page admin-card hidden">
         <div class="admin-title-row">
           <h2>📅 Önemli Tarihler</h2>
-
+          <div class="pager-box">
+            <button id="datesPrevBtn">◀</button>
+            <span id="datesPageInfo">1 / 1</span>
+            <button id="datesNextBtn">▶</button>
+          </div>
         </div>
         <input id="dateTitle" placeholder="Başlık">
         <input id="dateValue" type="date">
         <textarea id="dateText" placeholder="Açıklama"></textarea>
         <button id="addDateBtn" class="mb-8">Tarih Ekle</button>
-
+        <div id="datesAdminList" class="admin-grid"></div>
       </section>
 
       <section id="plansPage" class="admin-page admin-card hidden">
         <div class="admin-title-row">
           <h2>📝 Planlarımız</h2>
-
+          <div class="pager-box">
+            <button id="plansPrevBtn">◀</button>
+            <span id="plansPageInfo">1 / 1</span>
+            <button id="plansNextBtn">▶</button>
+          </div>
         </div>
         <input id="planTitle" placeholder="Plan başlığı">
         <textarea id="planText" placeholder="Plan açıklaması"></textarea>
@@ -108,7 +155,7 @@
   </option>
 </select>
         <button id="addPlanBtn" class="mb-8">Plan Ekle</button>
-
+        <div id="plansAdminList" class="admin-grid"></div>
       </section>
 
       <section id="musicPage" class="admin-page admin-card hidden">
@@ -135,10 +182,20 @@
   <textarea id="secretMessageInput" placeholder="Gizli mesaj"></textarea>
 
   <button id="saveSecretBtn">
-    Gizli Mesajı Kaydet
+    Gizli Mesajı Listeye Ekle
   </button>
 
+  <div class="flex items-center justify-between mt-8 mb-4">
+    <h3 class="text-xl font-bold text-rose-600">Kayıtlı Gizli Mesajlar</h3>
 
+    <div class="flex gap-3 items-center">
+      <button id="secretPrevBtn">◀</button>
+      <span id="secretPageInfo" class="px-4 py-2 bg-white rounded-xl">1 / 1</span>
+      <button id="secretNextBtn">▶</button>
+    </div>
+  </div>
+
+  <div id="secretAdminList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4"></div>
 </section>
 
     <section id="secretQuestionPage" class="admin-page admin-card hidden">
@@ -148,10 +205,20 @@
   <input id="secretAnswerInput" placeholder="Doğru cevap">
 
   <button id="saveSecretQuestionBtn">
-    Soru ve Cevabı Kaydet
+    Soru ve Cevabı Listeye Ekle
   </button>
 
+  <div class="flex items-center justify-between mt-8 mb-4">
+    <h3 class="text-xl font-bold text-rose-600">Kayıtlı Sorular</h3>
 
+    <div class="flex gap-3 items-center">
+      <button id="secretQuestionPrevBtn">◀</button>
+      <span id="secretQuestionPageInfo" class="px-4 py-2 bg-white rounded-xl">1 / 1</span>
+      <button id="secretQuestionNextBtn">▶</button>
+    </div>
+  </div>
+
+  <div id="secretQuestionAdminList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4"></div>
 </section>
     </div>
 
