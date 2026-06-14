@@ -105,6 +105,7 @@ onAuthStateChanged(auth, (user) => {
     loadAdminDates();
     loadAdminSecrets();
     loadAdminSecretQuestions();
+    loadContactSettings();
   }
 });
 
@@ -1033,6 +1034,7 @@ function renderSecretPage() {
       alert("Gizli mesaj silindi");
       loadAdminSecrets();
     loadAdminSecretQuestions();
+    loadContactSettings();
     });
   });
 }
@@ -1052,12 +1054,57 @@ $("secretNextBtn")?.addEventListener("click", () => {
     renderSecretPage();
   }
 });
+
+
+
+/* İLETİŞİM AYARLARI */
+async function loadContactSettings() {
+  const saidInput = $("saidInstagramInput");
+  const veraInput = $("veraInstagramInput");
+
+  if (!saidInput && !veraInput) return;
+
+  const ref = doc(db, "siteSettings", "main");
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+
+  if (saidInput) saidInput.value = data.saidInstagram || "";
+  if (veraInput) veraInput.value = data.veraInstagram || "";
+}
+
 $("saveContactBtn")?.addEventListener("click", async () => {
+  const saidInstagram = $("saidInstagramInput")?.value.trim() || "";
+  const veraInstagram = $("veraInstagramInput")?.value.trim() || "";
+
+  if (!saidInstagram && !veraInstagram) {
+    alert("En az bir Instagram linki gir");
+    return;
+  }
+
+  if (
+    saidInstagram &&
+    (!saidInstagram.includes("instagram.com") || !saidInstagram.startsWith("http"))
+  ) {
+    alert("Muhammed için geçerli Instagram linki gir");
+    return;
+  }
+
+  if (
+    veraInstagram &&
+    (!veraInstagram.includes("instagram.com") || !veraInstagram.startsWith("http"))
+  ) {
+    alert("Vera için geçerli Instagram linki gir");
+    return;
+  }
+
   await setDoc(
     doc(db, "siteSettings", "main"),
     {
-      saidInstagram: $("saidInstagramInput")?.value || "",
-      veraInstagram: $("veraInstagramInput")?.value || ""
+      saidInstagram,
+      veraInstagram
     },
     { merge: true }
   );
@@ -1162,6 +1209,7 @@ function renderSecretQuestionPage() {
 
       alert("Soru silindi");
       loadAdminSecretQuestions();
+    loadContactSettings();
     });
   });
 }
