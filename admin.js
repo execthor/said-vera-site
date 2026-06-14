@@ -39,46 +39,12 @@ async function fileToHash(file) {
     .join("");
 }
 
-window.fileToHash = fileToHash;
-
-async function isDuplicateFile(collectionName, file) {
-  const fileHash = await fileToHash(file);
-  const fileName = normalizeText(file.name);
-  const fileSize = file.size;
-
-  // Yeni sistem: belge ID doğrudan dosya hash'i.
-  const directDoc = await getDoc(doc(db, collectionName, fileHash));
-  if (directDoc.exists()) {
-    return {
-      exists: true,
-      fileHash,
-      fileName: file.name,
-      fileSize
-    };
-  }
-
-  // Eski sistem: random ID ile kaydedilmiş ama fileHash/fileName varsa onu da yakala.
+async function isDuplicateFile(collectionName, fileHash) {
   const snapshot = await getDocs(collection(db, collectionName));
 
-  const exists = snapshot.docs.some((docSnap) => {
-    const data = docSnap.data();
-
-    const sameHash = data.fileHash && data.fileHash === fileHash;
-
-    const sameNameAndSize =
-      data.fileName &&
-      normalizeText(data.fileName) === fileName &&
-      Number(data.fileSize || 0) === Number(fileSize);
-
-    return sameHash || sameNameAndSize;
+  return snapshot.docs.some((docSnap) => {
+    return docSnap.data().fileHash === fileHash;
   });
-
-  return {
-    exists,
-    fileHash,
-    fileName: file.name,
-    fileSize
-  };
 }
 
 async function isDuplicateRecord(collectionName, fields) {
@@ -114,9 +80,6 @@ let secretQuestionPageCurrent = 1;
 
 const loginBox = $("loginBox");
 const adminBox = $("adminBox");
-
-let isPhotoUploading = false;
-let isVideoUploading = false;
 
 /* LOGIN */
 $("loginBtn")?.addEventListener("click", async () => {
@@ -166,77 +129,45 @@ document.querySelectorAll("[data-page]").forEach((btn) => {
 
 /* VİDEO YÜKLE */
 $("uploadHeroVideoBtn")?.addEventListener("click", async () => {
-  if (isVideoUploading) return;
-
-  const btn = $("uploadHeroVideoBtn");
   const file = $("heroVideoFile")?.files[0];
 
   if (!file) return alert("Video seç");
 
-  try {
-    isVideoUploading = true;
+  const fileHash = await fileToHash(file);
 
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = "Aynı video kontrol ediliyor...";
-    }
-
-    const duplicate = await isDuplicateFile("heroVideos", file);
-
-    if (duplicate.exists) {
-      alert("Bu video zaten eklenmiş");
-      return;
-    }
-
-    if (btn) btn.textContent = "Video yükleniyor...";
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "saidvera_video");
-
-    const response = await fetch(
-      "https://api.cloudinary.com/v1_1/dosgbutzh/video/upload",
-      { method: "POST", body: formData }
-    );
-
-    const data = await response.json();
-
-    if (!data.secure_url) {
-      console.log(data);
-      alert("Video yüklenemedi");
-      return;
-    }
-
-    const finalCheck = await getDoc(doc(db, "heroVideos", duplicate.fileHash));
-
-    if (finalCheck.exists()) {
-      alert("Bu video zaten eklenmiş");
-      return;
-    }
-
-    await setDoc(doc(db, "heroVideos", duplicate.fileHash), {
-      videoUrl: data.secure_url,
-      fileHash: duplicate.fileHash,
-      fileName: duplicate.fileName,
-      fileSize: duplicate.fileSize,
-      createdAt: serverTimestamp()
-    });
-
-    if ($("heroVideoFile")) $("heroVideoFile").value = "";
-
-    alert("Video arşive eklendi");
-    loadAdminHeroVideos();
-  } catch (error) {
-    console.error(error);
-    alert("Video yükleme hatası: " + error.message);
-  } finally {
-    isVideoUploading = false;
-
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = "Video Yükle";
-    }
+  if (await isDuplicateFile("heroVideos", fileHash)) {
+    alert("Bu video zaten eklenmiş");
+    return;
   }
+
+  alert("Video yükleniyor...");
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "saidvera_video");
+
+  const response = await fetch(
+    "https://api.cloudinary.com/v1_1/dosgbutzh/video/upload",
+    { method: "POST", body: formData }
+  );
+
+  const data = await response.json();
+
+  if (!data.secure_url) {
+    console.log(data);
+    return alert("Video yüklenemedi");
+  }
+
+  await addDoc(collection(db, "heroVideos"), {
+    videoUrl: data.secure_url,
+    fileHash,
+    createdAt: serverTimestamp()
+  });
+
+  if ($("heroVideoFile")) $("heroVideoFile").value = "";
+
+  alert("Video arşive eklendi");
+  loadAdminHeroVideos();
 });
 
 /* HİKAYE EKLE */
@@ -264,84 +195,48 @@ $("saveStoryBtn")?.addEventListener("click", async () => {
 
 /* FOTOĞRAF YÜKLE */
 $("uploadPhotoBtn")?.addEventListener("click", async () => {
-  if (isPhotoUploading) return;
-
-  const btn = $("uploadPhotoBtn");
   const file = $("photoFile")?.files[0];
   const title = $("photoTitle")?.value || "";
 
   if (!file) return alert("Fotoğraf seç");
 
-  try {
-    isPhotoUploading = true;
+  const fileHash = await fileToHash(file);
 
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = "Aynı fotoğraf kontrol ediliyor...";
-    }
-
-    const duplicate = await isDuplicateFile("gallery", file);
-
-    if (duplicate.exists) {
-      alert("Bu fotoğraf zaten eklenmiş");
-      return;
-    }
-
-    if (btn) btn.textContent = "Fotoğraf yükleniyor...";
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "saidvera");
-
-    const response = await fetch(
-      "https://api.cloudinary.com/v1_1/dosgbutzh/image/upload",
-      { method: "POST", body: formData }
-    );
-
-    const data = await response.json();
-
-    if (!data.secure_url) {
-      console.log(data);
-      alert("Fotoğraf yüklenemedi");
-      return;
-    }
-
-    // Upload bitince tekrar kontrol: hızlı çift tıklama / başka sekme ihtimaline karşı.
-    const finalCheck = await getDoc(doc(db, "gallery", duplicate.fileHash));
-
-    if (finalCheck.exists()) {
-      alert("Bu fotoğraf zaten eklenmiş");
-      return;
-    }
-
-    // EN ÖNEMLİ KISIM:
-    // addDoc yerine setDoc + belge ID = fileHash.
-    // Böylece aynı fotoğraf aynı ID'ye denk gelir ve tekrar kayıt oluşturamaz.
-    await setDoc(doc(db, "gallery", duplicate.fileHash), {
-      title,
-      imageUrl: data.secure_url,
-      fileHash: duplicate.fileHash,
-      fileName: duplicate.fileName,
-      fileSize: duplicate.fileSize,
-      createdAt: serverTimestamp()
-    });
-
-    if ($("photoFile")) $("photoFile").value = "";
-    if ($("photoTitle")) $("photoTitle").value = "";
-
-    alert("Fotoğraf yüklendi");
-    loadAdminGallery();
-  } catch (error) {
-    console.error(error);
-    alert("Fotoğraf yükleme hatası: " + error.message);
-  } finally {
-    isPhotoUploading = false;
-
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = "Fotoğraf Yükle";
-    }
+  if (await isDuplicateFile("gallery", fileHash)) {
+    alert("Bu fotoğraf zaten eklenmiş");
+    return;
   }
+
+  alert("Fotoğraf yükleniyor...");
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "saidvera");
+
+  const response = await fetch(
+    "https://api.cloudinary.com/v1_1/dosgbutzh/image/upload",
+    { method: "POST", body: formData }
+  );
+
+  const data = await response.json();
+
+  if (!data.secure_url) {
+    console.log(data);
+    return alert("Fotoğraf yüklenemedi");
+  }
+
+  await addDoc(collection(db, "gallery"), {
+    title,
+    imageUrl: data.secure_url,
+    fileHash,
+    createdAt: serverTimestamp()
+  });
+
+  if ($("photoFile")) $("photoFile").value = "";
+  if ($("photoTitle")) $("photoTitle").value = "";
+
+  alert("Fotoğraf yüklendi");
+  loadAdminGallery();
 });
 
 /* TARİH EKLE */
@@ -563,56 +458,110 @@ $("galleryNextBtn")?.addEventListener("click", () => {
   }
 });
 
-/* FOTOĞRAF HOVER */
-let adminHoverTimer = null;
 
-document.addEventListener("mouseover", (e) => {
-  const target = e.target;
+/* FOTOĞRAF HOVER - STABİL ADMIN */
+let adminPhotoHoverTimer = null;
+let adminPhotoPreviewOpen = false;
 
-  if (!(target instanceof Element)) return;
+function openAdminPhotoPreview(src) {
+  clearTimeout(adminPhotoHoverTimer);
 
-  const img = target.closest(".admin-gallery-img");
+  let preview = document.getElementById("adminPhotoPreview");
 
-  if (!img) return;
+  if (!preview) {
+    preview = document.createElement("div");
+    preview.id = "adminPhotoPreview";
+    preview.innerHTML = `
+      <div class="admin-photo-preview-box">
+        <button id="adminPhotoPreviewClose">×</button>
+        <img id="adminPhotoPreviewImg" src="" alt="Fotoğraf önizleme">
+      </div>
+    `;
 
-  clearTimeout(adminHoverTimer);
+    document.body.appendChild(preview);
 
-  adminHoverTimer = setTimeout(() => {
-    let preview = document.getElementById("adminPhotoPreview");
+    document
+      .getElementById("adminPhotoPreviewClose")
+      ?.addEventListener("click", closeAdminPhotoPreview);
 
-    if (!preview) {
-      preview = document.createElement("div");
-      preview.id = "adminPhotoPreview";
-      preview.innerHTML = `
-        <div class="admin-photo-preview-box">
-          <img id="adminPhotoPreviewImg" src="">
-        </div>
-      `;
-      document.body.appendChild(preview);
-    }
+    preview.addEventListener("click", (e) => {
+      if (e.target === preview) closeAdminPhotoPreview();
+    });
+  }
 
-    document.getElementById("adminPhotoPreviewImg").src = img.src;
-    preview.classList.add("active");
-  }, 1000);
-});
+  const img = document.getElementById("adminPhotoPreviewImg");
+  if (img) img.src = src;
 
-document.addEventListener("mouseout", (e) => {
-  const target = e.target;
+  adminPhotoPreviewOpen = true;
+  preview.classList.add("active");
+}
 
-  if (!(target instanceof Element)) return;
-
-  const img = target.closest(".admin-gallery-img");
-
-  if (!img) return;
-
-  clearTimeout(adminHoverTimer);
+function closeAdminPhotoPreview() {
+  clearTimeout(adminPhotoHoverTimer);
 
   const preview = document.getElementById("adminPhotoPreview");
-  const previewImg = document.getElementById("adminPhotoPreviewImg");
+  const img = document.getElementById("adminPhotoPreviewImg");
+
+  adminPhotoPreviewOpen = false;
 
   if (preview) preview.classList.remove("active");
-  if (previewImg) previewImg.src = "";
+  if (img) img.src = "";
+}
+
+document.addEventListener("pointerenter", (e) => {
+  const target = e.target;
+
+  if (!(target instanceof Element)) return;
+
+  const img = target.closest(".admin-gallery-img");
+  if (!img) return;
+
+  const isFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  if (!isFinePointer) return;
+
+  clearTimeout(adminPhotoHoverTimer);
+
+  adminPhotoHoverTimer = setTimeout(() => {
+    if (adminPhotoPreviewOpen) return;
+    openAdminPhotoPreview(img.src);
+  }, 1500);
+}, true);
+
+document.addEventListener("pointerleave", (e) => {
+  const target = e.target;
+
+  if (!(target instanceof Element)) return;
+
+  const img = target.closest(".admin-gallery-img");
+  if (!img) return;
+
+  if (!adminPhotoPreviewOpen) {
+    clearTimeout(adminPhotoHoverTimer);
+  }
+}, true);
+
+document.addEventListener("click", (e) => {
+  const target = e.target;
+
+  if (!(target instanceof Element)) return;
+
+  if (target.closest("#adminPhotoPreview")) return;
+
+  const img = target.closest(".admin-gallery-img");
+  if (!img) return;
+
+  const isFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  if (isFinePointer) return;
+
+  openAdminPhotoPreview(img.src);
 });
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    closeAdminPhotoPreview();
+  }
+});
+
 
 /* HİKAYE LİSTE */
 async function loadAdminStories() {
