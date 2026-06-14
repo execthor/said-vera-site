@@ -75,6 +75,9 @@ let heroVideoPageCurrent = 1;
 let dateItems = [];
 let datePageCurrent = 1;
 
+let planItems = [];
+let planPageCurrent = 1;
+
 let secretItems = [];
 let secretPageCurrent = 1;
 
@@ -976,6 +979,121 @@ $("datesNextBtn")?.addEventListener("click", () => {
     renderDatePage();
   }
 });
+
+/* PLANLAR LİSTE */
+async function loadAdminPlans() {
+  const list = $("plansAdminList");
+  if (!list) return;
+
+  const q = query(collection(db, "plans"), orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
+
+  planItems = [];
+
+  snapshot.forEach((docSnap) => {
+    planItems.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  renderPlanPage();
+}
+
+function renderPlanPage() {
+  const list = $("plansAdminList");
+  const info = $("plansPageInfo");
+
+  if (!list) return;
+
+  const nearPlans = planItems.filter((item) => item.type !== "dream");
+  const dreamPlans = planItems.filter((item) => item.type === "dream");
+
+  function createPlanCard(item) {
+    return `
+      <div class="bg-white/70 rounded-3xl shadow-lg border border-rose-100 p-4">
+        <h3 class="font-bold text-rose-600 text-lg mb-2">
+          ${item.title || "Başlıksız"}
+        </h3>
+
+        <p class="text-sm text-rose-900/80 line-clamp-5 mb-4">
+          ${item.text || ""}
+        </p>
+
+        <button
+          class="deletePlanBtn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold w-full"
+          data-id="${item.id}"
+        >
+          Sil
+        </button>
+      </div>
+    `;
+  }
+
+  list.innerHTML = `
+    <div class="col-span-full">
+      <h3 class="text-2xl font-black text-rose-600 mb-4">
+        📝 Planlarımız
+      </h3>
+
+      <div class="admin-grid mb-10">
+        ${
+          nearPlans.length
+            ? nearPlans.map(createPlanCard).join("")
+            : `<p class="col-span-full text-rose-700 bg-white/60 rounded-2xl p-4">Henüz plan eklenmedi.</p>`
+        }
+      </div>
+
+      <h3 class="text-2xl font-black text-rose-600 mb-4">
+        ✨ Hayallerimiz
+      </h3>
+
+      <div class="admin-grid">
+        ${
+          dreamPlans.length
+            ? dreamPlans.map(createPlanCard).join("")
+            : `<p class="col-span-full text-rose-700 bg-white/60 rounded-2xl p-4">Henüz hayal eklenmedi.</p>`
+        }
+      </div>
+    </div>
+  `;
+
+  if (info) {
+    info.textContent = `Plan: ${nearPlans.length} / Hayal: ${dreamPlans.length}`;
+  }
+
+  document.querySelectorAll(".deletePlanBtn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id;
+
+      if (!id) return;
+      if (!confirm("Bu kayıt silinsin mi?")) return;
+
+      await deleteDoc(doc(db, "plans", id));
+
+      alert("Kayıt silindi");
+      loadAdminPlans();
+    });
+  });
+}
+
+$("plansPrevBtn")?.addEventListener("click", () => {
+  if (planPageCurrent > 1) {
+    planPageCurrent--;
+    renderPlanPage();
+  }
+});
+
+$("plansNextBtn")?.addEventListener("click", () => {
+  const totalPages = Math.ceil(planItems.length / pageSize) || 1;
+
+  if (planPageCurrent < totalPages) {
+    planPageCurrent++;
+    renderPlanPage();
+  }
+});
+
+
 async function loadAdminSecrets() {
   const list = $("secretAdminList");
   if (!list) return;
