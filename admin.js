@@ -1058,21 +1058,55 @@ $("secretNextBtn")?.addEventListener("click", () => {
 
 
 /* İLETİŞİM AYARLARI */
+function renderCurrentContactLinks(data) {
+  const box = $("currentContactLinks");
+  if (!box) return;
+
+  const saidInstagram = data.saidInstagram || "";
+  const veraInstagram = data.veraInstagram || "";
+
+  box.innerHTML = `
+    <div class="bg-white/70 rounded-2xl p-4 border border-rose-100">
+      <p class="font-bold text-rose-600 mb-1">Muhammed</p>
+      ${
+        saidInstagram
+          ? `<a href="${saidInstagram}" target="_blank" rel="noreferrer" class="underline break-all">${saidInstagram}</a>`
+          : `<p class="opacity-70">Instagram linki kayıtlı değil.</p>`
+      }
+    </div>
+
+    <div class="bg-white/70 rounded-2xl p-4 border border-rose-100">
+      <p class="font-bold text-rose-600 mb-1">Vera</p>
+      ${
+        veraInstagram
+          ? `<a href="${veraInstagram}" target="_blank" rel="noreferrer" class="underline break-all">${veraInstagram}</a>`
+          : `<p class="opacity-70">Instagram linki kayıtlı değil.</p>`
+      }
+    </div>
+  `;
+}
+
 async function loadContactSettings() {
   const saidInput = $("saidInstagramInput");
   const veraInput = $("veraInstagramInput");
+  const currentBox = $("currentContactLinks");
 
-  if (!saidInput && !veraInput) return;
+  if (!saidInput && !veraInput && !currentBox) return;
 
   const ref = doc(db, "siteSettings", "main");
   const snap = await getDoc(ref);
 
-  if (!snap.exists()) return;
+  if (!snap.exists()) {
+    if (currentBox) currentBox.innerHTML = "<p>Kayıtlı iletişim bilgisi yok.</p>";
+    return;
+  }
 
   const data = snap.data();
 
   if (saidInput) saidInput.value = data.saidInstagram || "";
   if (veraInput) veraInput.value = data.veraInstagram || "";
+
+  renderCurrentContactLinks(data);
 }
 
 $("saveContactBtn")?.addEventListener("click", async () => {
@@ -1110,6 +1144,7 @@ $("saveContactBtn")?.addEventListener("click", async () => {
   );
 
   alert("İletişim bilgileri kaydedildi");
+  loadContactSettings();
 });
 
 /* GİZLİ SORULAR LİSTE */
