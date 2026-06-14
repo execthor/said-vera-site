@@ -485,6 +485,7 @@ async function loadMusic() {
 
 
 
+
 function addGalleryProfessionalPreviewStyles() {
   if (document.getElementById("galleryProfessionalPreviewStyles")) return;
 
@@ -639,7 +640,6 @@ function addGalleryProfessionalPreviewStyles() {
 addGalleryProfessionalPreviewStyles();
 
 
-
 let galleryHoverTimer = null;
 let galleryModalOpen = false;
 let currentGalleryIndex = 0;
@@ -665,17 +665,16 @@ function renderGalleryModalContent() {
   if (counter) counter.textContent = `${currentGalleryIndex + 1} / ${items.length}`;
 }
 
-function openGalleryPhotoModal(indexOrSrc) {
+function openGalleryPhotoModal(index) {
   clearTimeout(galleryHoverTimer);
 
   const items = getGalleryItems();
+  if (!items.length) return;
 
-  if (typeof indexOrSrc === "number") {
-    currentGalleryIndex = indexOrSrc;
-  } else {
-    const foundIndex = items.findIndex((item) => item.imageUrl === indexOrSrc);
-    currentGalleryIndex = foundIndex >= 0 ? foundIndex : 0;
-  }
+  currentGalleryIndex = Number(index || 0);
+
+  if (currentGalleryIndex < 0) currentGalleryIndex = 0;
+  if (currentGalleryIndex >= items.length) currentGalleryIndex = items.length - 1;
 
   let modal = document.getElementById("galleryPhotoModal");
 
@@ -696,19 +695,19 @@ function openGalleryPhotoModal(indexOrSrc) {
 
     document.body.appendChild(modal);
 
-    document
-      .getElementById("galleryPhotoModalClose")
-      ?.addEventListener("click", closeGalleryPhotoModal);
+    document.getElementById("galleryPhotoModalClose")
+      ?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        closeGalleryPhotoModal();
+      });
 
-    document
-      .getElementById("galleryPhotoModalPrev")
+    document.getElementById("galleryPhotoModalPrev")
       ?.addEventListener("click", (e) => {
         e.stopPropagation();
         showPreviousGalleryPhoto();
       });
 
-    document
-      .getElementById("galleryPhotoModalNext")
+    document.getElementById("galleryPhotoModalNext")
       ?.addEventListener("click", (e) => {
         e.stopPropagation();
         showNextGalleryPhoto();
@@ -740,9 +739,7 @@ function showPreviousGalleryPhoto() {
   const items = getGalleryItems();
   if (!items.length) return;
 
-  currentGalleryIndex =
-    (currentGalleryIndex - 1 + items.length) % items.length;
-
+  currentGalleryIndex = (currentGalleryIndex - 1 + items.length) % items.length;
   renderGalleryModalContent();
 }
 
@@ -750,13 +747,13 @@ function showNextGalleryPhoto() {
   const items = getGalleryItems();
   if (!items.length) return;
 
-  currentGalleryIndex =
-    (currentGalleryIndex + 1) % items.length;
-
+  currentGalleryIndex = (currentGalleryIndex + 1) % items.length;
   renderGalleryModalContent();
 }
 
-document.addEventListener("mouseover", (e) => {
+// Tek ve stabil hover sistemi: pointerenter/pointerleave kullanır.
+// Modal açıldıktan sonra pointerleave kapatmaz.
+document.addEventListener("pointerenter", (e) => {
   const target = e.target;
 
   if (!(target instanceof Element)) return;
@@ -775,9 +772,9 @@ document.addEventListener("mouseover", (e) => {
     const index = Number(card.dataset.galleryIndex || 0);
     openGalleryPhotoModal(index);
   }, 1500);
-});
+}, true);
 
-document.addEventListener("mouseout", (e) => {
+document.addEventListener("pointerleave", (e) => {
   const target = e.target;
 
   if (!(target instanceof Element)) return;
@@ -791,12 +788,14 @@ document.addEventListener("mouseout", (e) => {
   if (!galleryModalOpen) {
     clearTimeout(galleryHoverTimer);
   }
-});
+}, true);
 
 document.addEventListener("click", (e) => {
   const target = e.target;
 
   if (!(target instanceof Element)) return;
+
+  if (target.closest(".gallery-photo-modal")) return;
 
   const card = target.closest(".gallery-item");
   if (!card) return;
@@ -811,17 +810,9 @@ document.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
   if (!galleryModalOpen) return;
 
-  if (e.key === "Escape") {
-    closeGalleryPhotoModal();
-  }
-
-  if (e.key === "ArrowLeft") {
-    showPreviousGalleryPhoto();
-  }
-
-  if (e.key === "ArrowRight") {
-    showNextGalleryPhoto();
-  }
+  if (e.key === "Escape") closeGalleryPhotoModal();
+  if (e.key === "ArrowLeft") showPreviousGalleryPhoto();
+  if (e.key === "ArrowRight") showNextGalleryPhoto();
 });
 
 
